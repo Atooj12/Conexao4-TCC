@@ -1,0 +1,2 @@
+- Back: dotnet run no backend/src/Conexao4.DbMigrator e depois no backend/src/Conexao4.Blazor.
+- Front: npm install e npm run dev no frontend/.

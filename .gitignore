@@ -1,0 +1,22 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+*.db
+*.db-shm
+*.db-wal
+openiddict.pfx
+backend/src/*/Logs/
+
+# Node / Next
+node_modules/
+.next/
+out/
+.env*.local
+.env
+
+# Sistema / IDE
+.DS_Store
+Thumbs.db
+.idea/
