@@ -46,16 +46,17 @@
     "PrecoProduto": "Preço",
     "DescricaoProduto": "Descrição",
     "Disponivel": "Disponível",
-
     "Categoria:Cafe": "Café",
     "Categoria:BebidaGelada": "Bebida Gelada",
     "Categoria:Salgado": "Salgado",
     "Categoria:Doce": "Doce",
     "Categoria:Combo": "Combo",
     "Permission:Conexao4": "Conexao4",
-    "Permission:Produtos": "Produto Management",
-    "Permission:Produtos.Create": "Creating new Produtos",
-    "Permission:Produtos.Edit": "Editing the Produtos",
-    "Permission:Produtos.Delete": "Deleting the Produtos"
+    "Permission:Produtos": "Gerenciar produtos",
+    "Permission:Produtos.Create": "Criar produtos",
+    "Permission:Produtos.Edit": "Editar produtos",
+    "Permission:Produtos.Delete": "Excluir produtos",
+    "Permission:Pedidos": "Pedidos",
+    "Permission:Pedidos.Gerenciar": "Gerenciar todos os pedidos (admin)"
   }
 }

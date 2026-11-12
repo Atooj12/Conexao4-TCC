@@ -1,4 +1,4 @@
-﻿@page "/Produtos"
+@page "/Produtos"
 @using Volo.Abp.Application.Dtos
 @using Conexao4.Produtos
 @using Conexao4.Localization
@@ -72,7 +72,7 @@
                     </Field>   
                     <Field>
                         <FieldLabel>@L["Preço"]</FieldLabel>
-                        <NumericInput TValue="float" @bind-Value="NewEntity.Preco" />
+                        <NumericInput TValue="decimal" @bind-Value="NewEntity.Preco" />
                     </Field>
                     <Field>
                         <FieldLabel>@L["Descrição"]</FieldLabel>
@@ -116,7 +116,7 @@
                     </Field>
                     <Field>
                         <FieldLabel>@L["Preço"]</FieldLabel>
-                        <NumericInput TValue="float" @bind-Value="EditingEntity.Preco" />
+                        <NumericInput TValue="decimal" @bind-Value="EditingEntity.Preco" />
                     </Field>
                     <Field>
                         <FieldLabel>@L["Descrição"]</FieldLabel>

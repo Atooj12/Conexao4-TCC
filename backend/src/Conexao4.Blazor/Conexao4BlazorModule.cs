@@ -5,12 +5,13 @@ using Conexao4.Blazor.Components;
 using Conexao4.Blazor.HealthChecks;
 using Conexao4.Blazor.Menus;
 using Conexao4.EntityFrameworkCore;
-using Conexao4.Idp.Web;
 using Conexao4.Localization;
 using Conexao4.MultiTenancy;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Http;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -165,8 +166,6 @@ public class Conexao4BlazorModule : AbpModule
         ConfigureMenu(context);
         ConfigureCors(context, configuration);
 
-        context.Services.AddHostedService<SeedInMemoryHostedService>();
-
         Configure<AbpExceptionHandlingOptions>(options =>
         {
             options.SendExceptionsDetailsToClients = true;
@@ -187,6 +186,28 @@ public class Conexao4BlazorModule : AbpModule
     private void ConfigureAuthentication(ServiceConfigurationContext context)
     {
         context.Services.ForwardIdentityAuthenticationForBearer(OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme);
+
+        // Para a API (/api/...) responder 401/403 em vez de redirecionar pra tela de login (HTML).
+        // Importante pro front Next.js e pro app Android saberem que o token expirou/falta.
+        context.Services.ConfigureApplicationCookie(options =>
+        {
+            options.Events.OnRedirectToLogin = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api"))
+                    ctx.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                else
+                    ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            };
+            options.Events.OnRedirectToAccessDenied = ctx =>
+            {
+                if (ctx.Request.Path.StartsWithSegments("/api"))
+                    ctx.Response.StatusCode = StatusCodes.Status403Forbidden;
+                else
+                    ctx.Response.Redirect(ctx.RedirectUri);
+                return Task.CompletedTask;
+            };
+        });
         context.Services.Configure<AbpClaimsPrincipalFactoryOptions>(options =>
         {
             options.IsDynamicClaimsEnabled = true;

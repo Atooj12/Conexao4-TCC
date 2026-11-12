@@ -83,6 +83,7 @@ public class Conexao4DbContext :
             b.Property(x => x.Nome).IsRequired().HasMaxLength(128);
             b.Property(x => x.Descricao).HasMaxLength(1024);
             b.Property(x => x.UrlImagem).HasMaxLength(512);
+            b.Property(x => x.Preco).HasPrecision(10, 2);
         });
 
         builder.Entity<ItemPedido>(b =>
@@ -93,6 +94,8 @@ public class Conexao4DbContext :
             b.Property(x => x.UserId).IsRequired();
             b.Property(x => x.ProdutoId).IsRequired();
             b.Property(x => x.Quantidade).IsRequired();
+            b.Property(x => x.PrecoUnitario).HasPrecision(10, 2);
+            b.HasIndex(x => new { x.UserId, x.PedidoId }); // busca do carrinho
         });
 
         builder.Entity<Pedido>(b =>
@@ -101,6 +104,9 @@ public class Conexao4DbContext :
                 Conexao4Consts.DbSchema);
             b.ConfigureByConvention(); //auto configure for the base class props
             b.Property(x => x.UserId).IsRequired();
+            b.Property(x => x.Total).HasPrecision(10, 2);
+            b.Property(x => x.Observacao).HasMaxLength(500);
+            b.HasIndex(x => x.UserId);
         });
         //builder.Entity<YourEntity>(b =>
         //{t

@@ -444,6 +444,77 @@ namespace Conexao4.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "AppItemPedidos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    PedidoId = table.Column<int>(type: "INTEGER", nullable: true),
+                    ProdutoId = table.Column<int>(type: "INTEGER", nullable: false),
+                    Quantidade = table.Column<int>(type: "INTEGER", nullable: false),
+                    PrecoUnitario = table.Column<decimal>(type: "TEXT", precision: 10, scale: 2, nullable: false),
+                    ExtraProperties = table.Column<string>(type: "TEXT", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppItemPedidos", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppPedidos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    UserId = table.Column<Guid>(type: "TEXT", nullable: false),
+                    Status = table.Column<int>(type: "INTEGER", nullable: false),
+                    Total = table.Column<decimal>(type: "TEXT", precision: 10, scale: 2, nullable: false),
+                    FormaPagamento = table.Column<int>(type: "INTEGER", nullable: false),
+                    TipoPedido = table.Column<int>(type: "INTEGER", nullable: false),
+                    Observacao = table.Column<string>(type: "TEXT", maxLength: 500, nullable: true),
+                    ExtraProperties = table.Column<string>(type: "TEXT", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppPedidos", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "AppProdutos",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "INTEGER", nullable: false)
+                        .Annotation("Sqlite:Autoincrement", true),
+                    Nome = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
+                    Descricao = table.Column<string>(type: "TEXT", maxLength: 1024, nullable: true),
+                    UrlImagem = table.Column<string>(type: "TEXT", maxLength: 512, nullable: true),
+                    Preco = table.Column<decimal>(type: "TEXT", precision: 10, scale: 2, nullable: false),
+                    Categoria = table.Column<int>(type: "INTEGER", nullable: false),
+                    Disponivel = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ExtraProperties = table.Column<string>(type: "TEXT", nullable: false),
+                    ConcurrencyStamp = table.Column<string>(type: "TEXT", maxLength: 40, nullable: false),
+                    CreationTime = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    CreatorId = table.Column<Guid>(type: "TEXT", nullable: true),
+                    LastModificationTime = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    LastModifierId = table.Column<Guid>(type: "TEXT", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AppProdutos", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "OpenIddictApplications",
                 columns: table => new
                 {
@@ -1096,6 +1167,16 @@ namespace Conexao4.Migrations
                 column: "UserName");
 
             migrationBuilder.CreateIndex(
+                name: "IX_AppItemPedidos_UserId_PedidoId",
+                table: "AppItemPedidos",
+                columns: new[] { "UserId", "PedidoId" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_AppPedidos_UserId",
+                table: "AppPedidos",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_OpenIddictApplications_ClientId",
                 table: "OpenIddictApplications",
                 column: "ClientId");
@@ -1212,6 +1293,15 @@ namespace Conexao4.Migrations
 
             migrationBuilder.DropTable(
                 name: "AbpUserTokens");
+
+            migrationBuilder.DropTable(
+                name: "AppItemPedidos");
+
+            migrationBuilder.DropTable(
+                name: "AppPedidos");
+
+            migrationBuilder.DropTable(
+                name: "AppProdutos");
 
             migrationBuilder.DropTable(
                 name: "OpenIddictScopes");

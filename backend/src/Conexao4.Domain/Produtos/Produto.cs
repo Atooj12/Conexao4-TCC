@@ -1,6 +1,3 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Volo.Abp.Domain.Entities.Auditing;
 
 namespace Conexao4.Produtos
@@ -10,6 +7,13 @@ namespace Conexao4.Produtos
         public string Nome { get; set; } = string.Empty;
         public string? Descricao { get; set; }
         public string? UrlImagem { get; set; }
-        public float Preco { get; set; }
+
+        // decimal (e não float) porque é dinheiro: float tem erro de arredondamento
+        public decimal Preco { get; set; }
+
+        public CategoriaProduto Categoria { get; set; }
+
+        // Produto pausado continua no cardápio, mas não pode ir pro carrinho
+        public bool Disponivel { get; set; } = true;
     }
 }

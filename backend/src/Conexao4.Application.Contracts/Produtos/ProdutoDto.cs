@@ -10,12 +10,17 @@ namespace Conexao4.Produtos
         public string Nome { get; set; } = string.Empty;
 
         [Required]
-        public float Preco { get; set; }
+        [Range(0.01, 100000)]
+        public decimal Preco { get; set; }
 
         [StringLength(1024)]
         public string? Descricao { get; set; }
 
         [StringLength(512)]
         public string? UrlImagem { get; set; }
+
+        public CategoriaProduto Categoria { get; set; }
+
+        public bool Disponivel { get; set; } = true;
     }
 }

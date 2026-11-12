@@ -1,4 +1,4 @@
-﻿using Blazorise;
+using Blazorise;
 using Conexao4.Pedidos;
 using Conexao4.Produtos;
 using Microsoft.AspNetCore.Components;
@@ -70,7 +70,7 @@ public partial class Index
         if (!CurrentUser.IsAuthenticated)
             return;
 
-        var prdItemPedido = await ItemPedidoAppService.GetListAsync(new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
+        var prdItemPedido = await ItemPedidoAppService.GetListAsync();
         lItemPedido = prdItemPedido.Items.ToList();
 
         await InvokeAsync(StateHasChanged);
@@ -81,8 +81,7 @@ public partial class Index
         if (!CurrentUser.IsAuthenticated)
             return;
 
-        var prdPedido = await PedidoAppService.GetListAsync(new PagedAndSortedResultRequestDto { MaxResultCount = 1000 });
-        lPedido = prdPedido.Items.ToList();
+        lPedido = await PedidoAppService.GetMeusPedidosAsync();
 
         await InvokeAsync(StateHasChanged);
     }
@@ -150,7 +149,7 @@ public partial class Index
     {
         try
         {
-            await ItemPedidoAppService.FinalizarCarrinhoAsync();
+            await ItemPedidoAppService.FinalizarCarrinhoAsync(new FinalizarCarrinhoInput());
             await AtualizarCarrinhoAsync();
             await AtualizarPedidosAsync();
         }

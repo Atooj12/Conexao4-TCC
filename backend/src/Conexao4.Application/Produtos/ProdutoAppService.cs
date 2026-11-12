@@ -1,26 +1,27 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Conexao4.Permissions;
 using Volo.Abp.Application.Dtos;
 using Volo.Abp.Application.Services;
 using Volo.Abp.Domain.Repositories;
 
 namespace Conexao4.Produtos
 {
+    // GET (listar/ver) é público: o cardápio aparece sem login.
+    // Criar/editar/excluir exige as permissões de produto (o admin já tem todas).
     public class ProdutoAppService :
         CrudAppService<
-            Produto, //The Produto entity
-            ProdutoDto, //Used to show Produtos
-            int, //Primary key of the produto entity
-            PagedAndSortedResultRequestDto //Used for paging/sorting
-            >, //Used to create/update a produto
-        IProdutoAppService //implement the IProdutoAppService
+            Produto,                        // entidade
+            ProdutoDto,                     // DTO de saída
+            int,                            // tipo da chave
+            PagedAndSortedResultRequestDto  // paginação/ordenação
+            >,
+        IProdutoAppService
     {
         public ProdutoAppService(IRepository<Produto, int> repository)
             : base(repository)
         {
-
+            CreatePolicyName = Conexao4Permissions.Produtos.Create;
+            UpdatePolicyName = Conexao4Permissions.Produtos.Edit;
+            DeletePolicyName = Conexao4Permissions.Produtos.Delete;
         }
     }
 }
