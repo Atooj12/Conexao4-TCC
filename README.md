@@ -3,6 +3,7 @@
 - `backend/`: API em ABP 10.3 / .NET 10, com banco SQLite em arquivo (`backend/Conexao4.db`).
 - `frontend/`: Next.js.
 - `docs/API.md`: guia das rotas (para o front e para o app Android).
+- App Android (.NET MAUI): repositório separado, [ivraal/Conexao4.App](https://github.com/ivraal/Conexao4.App). Usa esta mesma API.
 
 ## Back-end
 
