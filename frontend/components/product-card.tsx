@@ -7,6 +7,7 @@ import { Plus, Clock, Coffee, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { useState } from 'react'
 import { useCart } from '@/lib/cart-context'
 import { categoryLabels, type Product } from '@/lib/types'
 import { formatCurrency } from '@/lib/format'
@@ -19,11 +20,14 @@ interface ProductCardProps {
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { addItem } = useCart()
+  const [adicionando, setAdicionando] = useState(false)
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault()
+  const handleAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault() // o card inteiro é um link: não deixa abrir o detalhe
     e.stopPropagation()
-    addItem(product)
+    setAdicionando(true)
+    await addItem(product)
+    setAdicionando(false)
   }
 
   return (
@@ -86,7 +90,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 size="icon"
                 className="h-10 w-10 rounded-full shadow-lg"
                 onClick={handleAddToCart}
-                disabled={!product.available}
+                disabled={!product.available || adicionando}
               >
                 <Plus className="h-5 w-5" />
                 <span className="sr-only">Adicionar ao carrinho</span>

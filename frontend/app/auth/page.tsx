@@ -3,7 +3,7 @@ import Image from "next/image"
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Coffee, Mail, Lock, Eye, EyeOff, ArrowRight, User, Phone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -237,7 +237,6 @@ export default function AuthPage() {
               </TabsList>
 
               <CardContent className="p-6 pt-8">
-                <AnimatePresence mode="wait">
                   {/* Login Form */}
                   <TabsContent value="login" className="mt-0">
                     <motion.div
@@ -428,7 +427,6 @@ export default function AuthPage() {
                       </form>
                     </motion.div>
                   </TabsContent>
-                </AnimatePresence>
               </CardContent>
             </Tabs>
           </Card>

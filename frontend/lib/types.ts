@@ -26,6 +26,7 @@ export type Category =
   | 'especiais'
 
 export interface CartItem {
+  id?: string // id do item do carrinho no back
   product: Product
   quantity: number
   notes?: string

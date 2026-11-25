@@ -14,8 +14,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Textarea } from '@/components/ui/textarea'
-import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { ClientLayout } from '@/components/client-layout'
 import { ProductCard, CardapioErro } from '@/components/product-card'
@@ -34,7 +32,7 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { addItem, setCartOpen } = useCart()
   
   const [quantity, setQuantity] = useState(1)
-  const [notes, setNotes] = useState('')
+  const [adicionando, setAdicionando] = useState(false)
   const { produtos: products, carregando, erro, recarregar } = useProdutos()
 
   const product = products.find(p => p.id === id)
@@ -84,12 +82,17 @@ export default function ProductPage({ params }: ProductPageProps) {
     .filter(p => p.category === product.category && p.id !== product.id)
     .slice(0, 4)
 
-  const handleAddToCart = () => {
-    addItem(product, quantity, notes || undefined)
-    setCartOpen(true)
+  const handleAddToCart = async () => {
+    setAdicionando(true)
+    const ok = await addItem(product, quantity)
+    setAdicionando(false)
+    if (ok) {
+      setQuantity(1)
+      setCartOpen(true)
+    }
   }
 
-  const incrementQuantity = () => setQuantity(q => q + 1)
+  const incrementQuantity = () => setQuantity(q => Math.min(99, q + 1))
   const decrementQuantity = () => setQuantity(q => Math.max(1, q - 1))
 
   return (
@@ -185,20 +188,6 @@ export default function ProductPage({ params }: ProductPageProps) {
 
               <Separator className="mb-6" />
 
-              {/* Notes */}
-              <div className="mb-6">
-                <Label htmlFor="notes" className="mb-2 block">
-                  Observações (opcional)
-                </Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Ex: Sem açúcar, leite de aveia..."
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  className="resize-none"
-                />
-              </div>
-
               {/* Quantity and Add to Cart */}
               <div className="flex flex-col sm:flex-row gap-4 mt-auto">
                 <div className="flex items-center border border-border rounded-lg">
@@ -215,6 +204,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                     variant="ghost"
                     size="icon"
                     onClick={incrementQuantity}
+                    disabled={quantity >= 99}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -224,7 +214,7 @@ export default function ProductPage({ params }: ProductPageProps) {
                   className="flex-1 gap-2" 
                   size="lg"
                   onClick={handleAddToCart}
-                  disabled={!product.available}
+                  disabled={!product.available || adicionando}
                 >
                   <ShoppingBag className="h-5 w-5" />
                   Adicionar ao carrinho

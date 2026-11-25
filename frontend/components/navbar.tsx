@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
+import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { useCart } from '@/lib/cart-context'
 import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
@@ -150,7 +150,8 @@ export function Navbar() {
                 <span className="sr-only">Menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-72 bg-background">
+            <SheetContent side="right" className="w-72 bg-background" aria-describedby={undefined}>
+              <SheetTitle className="sr-only">Menu</SheetTitle>
               <div className="flex flex-col gap-6 mt-6">
                 <div className="flex items-center gap-2">
                   <Coffee className="h-6 w-6 text-primary" />

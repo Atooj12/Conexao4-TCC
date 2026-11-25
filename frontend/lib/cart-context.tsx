@@ -1,171 +1,173 @@
 'use client'
 
-import { createContext, useContext, useReducer, type ReactNode } from 'react'
-import type { CartItem, Product } from './types'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
+import { toast } from 'sonner'
+import { apiFetch, showError } from '@/lib/api'
+import { useAuth } from '@/lib/auth-context'
+import {
+  FORMAS_PAGAMENTO,
+  TIPOS_PEDIDO,
+  toCartItem,
+  type ItemPedidoDto,
+  type PedidoDto,
+  type TipoPedidoSite,
+} from '@/lib/adapters'
+import type { CartItem, PaymentMethod, Product } from '@/lib/types'
 
-interface CartState {
-  items: CartItem[]
-  isOpen: boolean
+// O carrinho fica no back (tabela ItemPedido, sem pedido ainda).
+// Assim ele sobrevive ao F5, à troca de navegador e é o mesmo do app.
+// Aqui no site só guardamos uma cópia do que o back devolveu.
+
+const BASE = '/api/app/item-pedido'
+
+export interface DadosFinalizar {
+  formaPagamento: PaymentMethod
+  tipoPedido: TipoPedidoSite
+  observacao: string
 }
 
-type CartAction =
-  | { type: 'ADD_ITEM'; product: Product; quantity?: number; notes?: string }
-  | { type: 'REMOVE_ITEM'; productId: string }
-  | { type: 'UPDATE_QUANTITY'; productId: string; quantity: number }
-  | { type: 'UPDATE_NOTES'; productId: string; notes: string }
-  | { type: 'CLEAR_CART' }
-  | { type: 'TOGGLE_CART' }
-  | { type: 'SET_CART_OPEN'; isOpen: boolean }
-
-interface CartContextType extends CartState {
-  addItem: (product: Product, quantity?: number, notes?: string) => void
-  removeItem: (productId: string) => void
-  updateQuantity: (productId: string, quantity: number) => void
-  updateNotes: (productId: string, notes: string) => void
-  clearCart: () => void
+interface CartContextType {
+  items: CartItem[]
+  isOpen: boolean
+  isLoading: boolean // carregando o carrinho do back
+  isBusy: boolean // alguma alteração em andamento (trava os botões)
+  addItem: (product: Product, quantity?: number) => Promise<boolean>
+  removeItem: (productId: string) => Promise<void>
+  updateQuantity: (productId: string, quantity: number) => Promise<void>
+  clearCart: () => Promise<void>
+  finalizarPedido: (dados: DadosFinalizar) => Promise<PedidoDto>
   toggleCart: () => void
   setCartOpen: (isOpen: boolean) => void
   itemCount: number
-  subtotal: number
-  tax: number
   total: number
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined)
 
-function cartReducer(state: CartState, action: CartAction): CartState {
-  switch (action.type) {
-    case 'ADD_ITEM': {
-      const existingIndex = state.items.findIndex(
-        (item) => item.product.id === action.product.id
-      )
-
-      if (existingIndex > -1) {
-        const newItems = [...state.items]
-        newItems[existingIndex] = {
-          ...newItems[existingIndex],
-          quantity: newItems[existingIndex].quantity + (action.quantity || 1),
-        }
-        return { ...state, items: newItems }
-      }
-
-      return {
-        ...state,
-        items: [
-          ...state.items,
-          {
-            product: action.product,
-            quantity: action.quantity || 1,
-            notes: action.notes,
-          },
-        ],
-      }
-    }
-
-    case 'REMOVE_ITEM':
-      return {
-        ...state,
-        items: state.items.filter((item) => item.product.id !== action.productId),
-      }
-
-    case 'UPDATE_QUANTITY': {
-      if (action.quantity <= 0) {
-        return {
-          ...state,
-          items: state.items.filter((item) => item.product.id !== action.productId),
-        }
-      }
-
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.product.id === action.productId
-            ? { ...item, quantity: action.quantity }
-            : item
-        ),
-      }
-    }
-
-    case 'UPDATE_NOTES':
-      return {
-        ...state,
-        items: state.items.map((item) =>
-          item.product.id === action.productId
-            ? { ...item, notes: action.notes }
-            : item
-        ),
-      }
-
-    case 'CLEAR_CART':
-      return { ...state, items: [] }
-
-    case 'TOGGLE_CART':
-      return { ...state, isOpen: !state.isOpen }
-
-    case 'SET_CART_OPEN':
-      return { ...state, isOpen: action.isOpen }
-
-    default:
-      return state
-  }
-}
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(cartReducer, {
-    items: [],
-    isOpen: false,
-  })
+  const { user, isLoading: carregandoSessao } = useAuth()
+  const router = useRouter()
+  const pathname = usePathname()
 
-  const addItem = (product: Product, quantity?: number, notes?: string) => {
-    dispatch({ type: 'ADD_ITEM', product, quantity, notes })
+  const [items, setItems] = useState<CartItem[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isBusy, setIsBusy] = useState(false)
+  const ocupado = useRef(false) // evita clique duplo enquanto uma chamada não termina
+
+  const recarregar = useCallback(async () => {
+    const res = await apiFetch<{ items: ItemPedidoDto[] }>(BASE)
+    setItems(res.items.map(toCartItem))
+  }, [])
+
+  // Sempre que quem está logado muda (login, logout, F5), busca o carrinho dessa pessoa
+  useEffect(() => {
+    if (carregandoSessao) return
+    if (!user) {
+      setItems([])
+      setIsLoading(false)
+      return
+    }
+    setIsLoading(true)
+    recarregar()
+      .catch(() => setItems([]))
+      .finally(() => setIsLoading(false))
+  }, [user?.id, carregandoSessao, recarregar]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Roda uma alteração no back e depois relê o carrinho (o back é quem calcula os valores)
+  async function alterar(acao: () => Promise<unknown>) {
+    if (ocupado.current) return
+    ocupado.current = true
+    setIsBusy(true)
+    try {
+      await acao()
+      await recarregar()
+    } catch (err) {
+      showError(err)
+      await recarregar().catch(() => {})
+      throw err
+    } finally {
+      ocupado.current = false
+      setIsBusy(false)
+    }
   }
 
-  const removeItem = (productId: string) => {
-    dispatch({ type: 'REMOVE_ITEM', productId })
+  const itemDoProduto = (productId: string) => items.find(i => i.product.id === productId)
+
+  const addItem = async (product: Product, quantity = 1) => {
+    if (carregandoSessao) return false // logo depois do F5, ainda descobrindo quem está logado
+    if (!user) {
+      toast.info('Entre na sua conta para montar o pedido.')
+      router.push(`/auth?voltar=${encodeURIComponent(pathname)}`)
+      return false
+    }
+    if (ocupado.current) return false
+    try {
+      await alterar(() => apiFetch(`${BASE}/adicionar-ao-carrinho/${product.id}?quantidade=${quantity}`, { method: 'POST' }))
+      toast.success(`${product.name} adicionado ao carrinho`, {
+        action: { label: 'Ver carrinho', onClick: () => setIsOpen(true) },
+      })
+      return true
+    } catch {
+      return false
+    }
   }
 
-  const updateQuantity = (productId: string, quantity: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', productId, quantity })
+  const removeItem = async (productId: string) => {
+    const item = itemDoProduto(productId)
+    if (!item?.id) return
+    await alterar(() => apiFetch(`${BASE}/${item.id}`, { method: 'DELETE' })).catch(() => {})
   }
 
-  const updateNotes = (productId: string, notes: string) => {
-    dispatch({ type: 'UPDATE_NOTES', productId, notes })
+  const updateQuantity = async (productId: string, quantity: number) => {
+    if (quantity <= 0) return removeItem(productId)
+    const item = itemDoProduto(productId)
+    if (!item?.id) return
+    await alterar(() =>
+      apiFetch(`${BASE}/${item.id}/alterar-quantidade?quantidade=${quantity}`, { method: 'POST' })
+    ).catch(() => {})
   }
 
-  const clearCart = () => {
-    dispatch({ type: 'CLEAR_CART' })
+  const clearCart = async () => {
+    await alterar(() => apiFetch(`${BASE}/limpar-carrinho`, { method: 'POST' })).catch(() => {})
   }
 
-  const toggleCart = () => {
-    dispatch({ type: 'TOGGLE_CART' })
+  // Transforma o carrinho em pedido. O back confere os itens e calcula o total.
+  const finalizarPedido = async ({ formaPagamento, tipoPedido, observacao }: DadosFinalizar) => {
+    let pedido: PedidoDto | undefined
+    await alterar(async () => {
+      pedido = await apiFetch<PedidoDto>(`${BASE}/finalizar-carrinho`, {
+        method: 'POST',
+        body: JSON.stringify({
+          formaPagamento: FORMAS_PAGAMENTO.indexOf(formaPagamento),
+          tipoPedido: TIPOS_PEDIDO.indexOf(tipoPedido),
+          observacao: observacao.trim() || null,
+        }),
+      })
+    })
+    if (!pedido) throw new Error('Não foi possível finalizar o pedido.')
+    return pedido
   }
 
-  const setCartOpen = (isOpen: boolean) => {
-    dispatch({ type: 'SET_CART_OPEN', isOpen })
-  }
-
-  const itemCount = state.items.reduce((acc, item) => acc + item.quantity, 0)
-  const subtotal = state.items.reduce(
-    (acc, item) => acc + item.product.price * item.quantity,
-    0
-  )
-  const tax = subtotal * 0.1 // 10% tax
-  const total = subtotal + tax
+  const itemCount = items.reduce((acc, item) => acc + item.quantity, 0)
+  const total = items.reduce((acc, item) => acc + (item.subtotal ?? item.product.price * item.quantity), 0)
 
   return (
     <CartContext.Provider
       value={{
-        ...state,
+        items,
+        isOpen,
+        isLoading,
+        isBusy,
         addItem,
         removeItem,
         updateQuantity,
-        updateNotes,
         clearCart,
-        toggleCart,
-        setCartOpen,
+        finalizarPedido,
+        toggleCart: () => setIsOpen(aberto => !aberto),
+        setCartOpen: setIsOpen,
         itemCount,
-        subtotal,
-        tax,
         total,
       }}
     >
@@ -177,7 +179,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 export function useCart() {
   const context = useContext(CartContext)
   if (context === undefined) {
-    throw new Error('useCart must be used within a CartProvider')
+    throw new Error('useCart precisa estar dentro do <CartProvider>')
   }
   return context
 }
