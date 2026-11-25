@@ -9,12 +9,17 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { toast } from 'sonner'
+import { useAuth, nomeExibicao } from '@/lib/auth-context'
+import { showError } from '@/lib/api'
 
 export default function AuthPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user, isLoading: carregandoSessao, login, register } = useAuth()
+  // Para onde voltar depois de entrar (ex.: /auth?voltar=/checkout)
+  const voltar = searchParams.get('voltar')
   const tabParam = searchParams.get('tab')
   const [activeTab, setActiveTab] = useState(tabParam === 'register' ? 'register' : 'login')
   
@@ -31,7 +36,6 @@ export default function AuthPage() {
   const [loginData, setLoginData] = useState({
     email: '',
     password: '',
-    remember: false,
   })
 
   // Register state
@@ -42,20 +46,49 @@ export default function AuthPage() {
     password: '',
   })
 
+  // Já logado (ex.: abriu /auth com a sessão salva): vai direto pra página certa
+  useEffect(() => {
+    if (!carregandoSessao && user) router.replace(destino(user.isAdmin))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carregandoSessao, user])
+
+  function destino(isAdmin: boolean) {
+    if (voltar && voltar.startsWith('/')) return voltar
+    return isAdmin ? '/admin' : '/'
+  }
+
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    router.push('/')
+    try {
+      const logado = await login(loginData.email, loginData.password)
+      toast.success(`Bem-vindo de volta, ${nomeExibicao(logado)}!`)
+      router.push(destino(logado?.isAdmin ?? false))
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
+    if (registerData.password.length < 6) {
+      toast.error('A senha precisa ter pelo menos 6 caracteres.')
+      return
+    }
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    setIsLoading(false)
-    router.push('/')
+    try {
+      await register(registerData)
+      toast.success('Conta criada! Você já está logado.')
+      router.push(destino(false))
+    } catch (err) {
+      showError(err)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -223,12 +256,13 @@ export default function AuthPage() {
 
                       <form onSubmit={handleLoginSubmit} className="space-y-5">
                         <div className="space-y-2">
-                          <Label htmlFor="login-email" className="text-sm font-medium">E-mail</Label>
+                          <Label htmlFor="login-email" className="text-sm font-medium">E-mail ou usuário</Label>
                           <div className="relative">
                             <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
                               id="login-email"
-                              type="email"
+                              type="text"
+                              autoComplete="username"
                               placeholder="seu@email.com"
                               className="pl-11 h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-card transition-colors"
                               value={loginData.email}
@@ -253,6 +287,7 @@ export default function AuthPage() {
                             <Input
                               id="login-password"
                               type={showPassword ? 'text' : 'password'}
+                              autoComplete="current-password"
                               placeholder="Sua senha"
                               className="pl-11 pr-11 h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-card transition-colors"
                               value={loginData.password}
@@ -267,21 +302,6 @@ export default function AuthPage() {
                               {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Checkbox 
-                            id="remember" 
-                            checked={loginData.remember}
-                            onCheckedChange={(checked) => setLoginData({ ...loginData, remember: checked as boolean })}
-                            className="rounded"
-                          />
-                          <label
-                            htmlFor="remember"
-                            className="text-sm text-muted-foreground cursor-pointer select-none"
-                          >
-                            Lembrar de mim
-                          </label>
                         </div>
 
                         <Button 
@@ -362,7 +382,6 @@ export default function AuthPage() {
                               className="pl-11 h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-card transition-colors"
                               value={registerData.phone}
                               onChange={(e) => setRegisterData({ ...registerData, phone: e.target.value })}
-                              required
                             />
                           </div>
                         </div>
@@ -374,7 +393,8 @@ export default function AuthPage() {
                             <Input
                               id="register-password"
                               type={showConfirmPassword ? 'text' : 'password'}
-                              placeholder="Crie uma senha forte"
+                              autoComplete="new-password"
+                              placeholder="Crie uma senha"
                               className="pl-11 pr-11 h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-card transition-colors"
                               value={registerData.password}
                               onChange={(e) => setRegisterData({ ...registerData, password: e.target.value })}
@@ -388,7 +408,7 @@ export default function AuthPage() {
                               {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                             </button>
                           </div>
-                          <p className="text-xs text-muted-foreground">Minimo de 8 caracteres</p>
+                          <p className="text-xs text-muted-foreground">Mínimo de 6 caracteres</p>
                         </div>
 
                         <Button 

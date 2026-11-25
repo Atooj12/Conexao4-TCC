@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/lib/cart-context'
+import { AuthProvider } from '@/lib/auth-context'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const playfair = Playfair_Display({ 
@@ -59,9 +61,13 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="bg-background">
       <body className={`${playfair.variable} ${inter.variable} font-sans antialiased`}>
-        <CartProvider>
-          {children}
-        </CartProvider>
+        {/* AuthProvider por fora: o carrinho precisa saber quem está logado */}
+        <AuthProvider>
+          <CartProvider>
+            {children}
+          </CartProvider>
+          <Toaster richColors position="top-center" />
+        </AuthProvider>
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

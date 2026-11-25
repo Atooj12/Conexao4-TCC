@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { 
@@ -20,13 +21,14 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { ClientLayout } from '@/components/client-layout'
 import { mockUser, products, formatCurrency } from '@/lib/mock-data'
 import { cn } from '@/lib/utils'
+import { useAuth, nomeExibicao } from '@/lib/auth-context'
 
 const menuItems = [
   { icon: MapPin, label: 'Meus Endereços', href: '/perfil/enderecos' },
@@ -36,7 +38,24 @@ const menuItems = [
 ]
 
 export default function ProfilePage() {
+  const router = useRouter()
+  const { user: usuario, isLoading, logout } = useAuth()
+
+  // Perfil é só para quem está logado
+  useEffect(() => {
+    if (!isLoading && !usuario) router.replace('/auth?voltar=/perfil')
+  }, [isLoading, usuario, router])
+
+  // Fidelidade, endereços e favoritos ainda são de demonstração (S4)
   const user = mockUser
+  const nome = nomeExibicao(usuario)
+  const iniciais = nome.split(/[\s@.]+/).filter(Boolean).slice(0, 2).map(n => n[0].toUpperCase()).join('')
+
+  const sair = () => {
+    logout()
+    router.push('/')
+  }
+
   const favoriteProducts = products.filter(p => user.favoriteProducts.includes(p.id))
   const pointsToNextReward = 500 - (user.loyaltyPoints % 500)
   const progressToReward = ((user.loyaltyPoints % 500) / 500) * 100
@@ -66,27 +85,28 @@ export default function ProfilePage() {
               <CardContent className="p-6">
                 <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
                   <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                    <AvatarImage src={user.avatar} alt={user.name} />
                     <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                      {user.name.split(' ').map(n => n[0]).join('')}
+                      {iniciais}
                     </AvatarFallback>
                   </Avatar>
 
                   <div className="flex-1 text-center sm:text-left">
                     <div className="flex items-center justify-center sm:justify-start gap-2 mb-1">
-                      <h2 className="text-xl font-bold">{user.name}</h2>
+                      <h2 className="text-xl font-bold">{nome}</h2>
                       <Button variant="ghost" size="icon" className="h-8 w-8">
                         <Edit2 className="h-4 w-4" />
                       </Button>
                     </div>
                     <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mb-1">
                       <Mail className="h-4 w-4" />
-                      {user.email}
+                      {usuario?.email}
                     </p>
-                    <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
-                      <Phone className="h-4 w-4" />
-                      {user.phone}
-                    </p>
+                    {usuario?.phoneNumber && (
+                      <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2">
+                        <Phone className="h-4 w-4" />
+                        {usuario.phoneNumber}
+                      </p>
+                    )}
                   </div>
 
                   <div className="text-center sm:text-right">
@@ -283,7 +303,7 @@ export default function ProfilePage() {
             transition={{ delay: 0.4 }}
             className="mt-6 mb-8"
           >
-            <Button variant="outline" className="w-full text-destructive hover:text-destructive gap-2">
+            <Button variant="outline" className="w-full text-destructive hover:text-destructive gap-2" onClick={sair}>
               <LogOut className="h-4 w-4" />
               Sair da conta
             </Button>

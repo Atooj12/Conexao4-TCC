@@ -13,12 +13,14 @@ import {
   Home,
   UtensilsCrossed,
   ClipboardList,
-  Settings
+  Settings,
+  LogIn
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet'
 import { useCart } from '@/lib/cart-context'
+import { useAuth } from '@/lib/auth-context'
 import { cn } from '@/lib/utils'
 
 const navLinks = [
@@ -30,6 +32,7 @@ const navLinks = [
 export function Navbar() {
   const pathname = usePathname()
   const { itemCount, toggleCart } = useCart()
+  const { user, isAdmin } = useAuth()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   // Don't show navbar on admin routes
@@ -112,21 +115,32 @@ export function Navbar() {
             <span className="sr-only">Carrinho de compras</span>
           </Button>
 
-          {/* User Menu */}
-          <Link href="/perfil" className="hidden md:block">
-            <Button variant="outline" size="icon">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Minha conta</span>
-            </Button>
-          </Link>
+          {/* Conta: perfil se estiver logado, senão o botão Entrar */}
+          {user ? (
+            <Link href="/perfil" className="hidden md:block">
+              <Button variant="outline" size="icon">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Minha conta</span>
+              </Button>
+            </Link>
+          ) : (
+            <Link href="/auth" className="hidden md:block">
+              <Button variant="outline" className="gap-2">
+                <LogIn className="h-4 w-4" />
+                Entrar
+              </Button>
+            </Link>
+          )}
 
-          {/* Admin Link (for demo) */}
-          <Link href="/admin" className="hidden md:block">
-            <Button variant="ghost" size="icon">
-              <Settings className="h-5 w-5" />
-              <span className="sr-only">Administração</span>
-            </Button>
-          </Link>
+          {/* Painel do admin: só aparece para quem tem a permissão */}
+          {isAdmin && (
+            <Link href="/admin" className="hidden md:block">
+              <Button variant="ghost" size="icon">
+                <Settings className="h-5 w-5" />
+                <span className="sr-only">Administração</span>
+              </Button>
+            </Link>
+          )}
 
           {/* Mobile Menu */}
           <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -165,18 +179,20 @@ export function Navbar() {
                 </nav>
 
                 <div className="border-t border-border pt-4">
-                  <Link href="/perfil" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link href={user ? '/perfil' : '/auth'} onClick={() => setIsMobileMenuOpen(false)}>
                     <Button variant="ghost" className="w-full justify-start gap-3">
-                      <User className="h-5 w-5" />
-                      Minha Conta
+                      {user ? <User className="h-5 w-5" /> : <LogIn className="h-5 w-5" />}
+                      {user ? 'Minha Conta' : 'Entrar'}
                     </Button>
                   </Link>
-                  <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
-                    <Button variant="ghost" className="w-full justify-start gap-3">
-                      <Settings className="h-5 w-5" />
-                      Administração
-                    </Button>
-                  </Link>
+                  {isAdmin && (
+                    <Link href="/admin" onClick={() => setIsMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start gap-3">
+                        <Settings className="h-5 w-5" />
+                        Administração
+                      </Button>
+                    </Link>
+                  )}
                 </div>
               </div>
             </SheetContent>
