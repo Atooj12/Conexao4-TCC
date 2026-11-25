@@ -9,23 +9,19 @@ import {
   ArrowLeft, 
   Plus, 
   Minus, 
-  Clock, 
-  Flame, 
   ShoppingBag,
-  Heart,
-  Share2,
   Coffee
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { ClientLayout } from '@/components/client-layout'
-import { ProductCard } from '@/components/product-card'
+import { ProductCard, CardapioErro } from '@/components/product-card'
 import { useCart } from '@/lib/cart-context'
-import { products, formatCurrency } from '@/lib/mock-data'
+import { formatCurrency } from '@/lib/format'
+import { useProdutos } from '@/lib/use-produtos'
 import { categoryLabels } from '@/lib/types'
 
 interface ProductPageProps {
@@ -39,9 +35,37 @@ export default function ProductPage({ params }: ProductPageProps) {
   
   const [quantity, setQuantity] = useState(1)
   const [notes, setNotes] = useState('')
-  const [isFavorite, setIsFavorite] = useState(false)
+  const { produtos: products, carregando, erro, recarregar } = useProdutos()
 
   const product = products.find(p => p.id === id)
+
+  if (carregando) {
+    return (
+      <ClientLayout>
+        <div className="container px-4 py-8 md:px-6 md:py-12">
+          <div className="grid gap-8 lg:grid-cols-2 lg:gap-12">
+            <div className="aspect-square rounded-2xl bg-muted animate-pulse" />
+            <div className="space-y-4">
+              <div className="h-6 w-24 bg-muted rounded animate-pulse" />
+              <div className="h-10 w-3/4 bg-muted rounded animate-pulse" />
+              <div className="h-5 bg-muted rounded animate-pulse" />
+              <div className="h-8 w-32 bg-muted rounded animate-pulse" />
+            </div>
+          </div>
+        </div>
+      </ClientLayout>
+    )
+  }
+
+  if (erro) {
+    return (
+      <ClientLayout>
+        <div className="container px-4 py-8">
+          <CardapioErro mensagem={erro} onTentarDeNovo={recarregar} />
+        </div>
+      </ClientLayout>
+    )
+  }
 
   if (!product) {
     return (
@@ -127,34 +151,6 @@ export default function ProductPage({ params }: ProductPageProps) {
                   </>
                 )}
                 
-                {/* Tags */}
-                <div className="absolute top-4 left-4 flex flex-wrap gap-2">
-                  {product.tags.map(tag => (
-                    <Badge key={tag} variant="secondary" className="bg-background/90 backdrop-blur-sm">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-
-                {/* Actions */}
-                <div className="absolute top-4 right-4 flex flex-col gap-2">
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="bg-background/90 backdrop-blur-sm"
-                    onClick={() => setIsFavorite(!isFavorite)}
-                  >
-                    <Heart className={`h-4 w-4 ${isFavorite ? 'fill-destructive text-destructive' : ''}`} />
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    size="icon"
-                    className="bg-background/90 backdrop-blur-sm"
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
                 {!product.available && (
                   <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
                     <Badge variant="destructive" className="text-lg py-2 px-4">
@@ -183,71 +179,11 @@ export default function ProductPage({ params }: ProductPageProps) {
                 {product.description}
               </p>
 
-              <div className="flex items-center gap-6 mb-6">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span>{product.preparationTime} min de preparo</span>
-                </div>
-                {product.nutritionalInfo && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Flame className="h-4 w-4" />
-                    <span>{product.nutritionalInfo.calories} kcal</span>
-                  </div>
-                )}
-              </div>
-
               <div className="text-3xl font-bold text-primary mb-6">
                 {formatCurrency(product.price)}
               </div>
 
               <Separator className="mb-6" />
-
-              {/* Ingredients */}
-              {product.ingredients && product.ingredients.length > 0 && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3">Ingredientes</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {product.ingredients.map(ingredient => (
-                      <Badge key={ingredient} variant="secondary">
-                        {ingredient}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Nutritional Info */}
-              {product.nutritionalInfo && (
-                <div className="mb-6">
-                  <h3 className="font-semibold mb-3">Informações Nutricionais</h3>
-                  <div className="grid grid-cols-4 gap-4">
-                    <Card>
-                      <CardContent className="p-3 text-center">
-                        <p className="text-lg font-bold">{product.nutritionalInfo.calories}</p>
-                        <p className="text-xs text-muted-foreground">kcal</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-3 text-center">
-                        <p className="text-lg font-bold">{product.nutritionalInfo.protein}g</p>
-                        <p className="text-xs text-muted-foreground">proteína</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-3 text-center">
-                        <p className="text-lg font-bold">{product.nutritionalInfo.carbs}g</p>
-                        <p className="text-xs text-muted-foreground">carbos</p>
-                      </CardContent>
-                    </Card>
-                    <Card>
-                      <CardContent className="p-3 text-center">
-                        <p className="text-lg font-bold">{product.nutritionalInfo.fat}g</p>
-                        <p className="text-xs text-muted-foreground">gordura</p>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              )}
 
               {/* Notes */}
               <div className="mb-6">

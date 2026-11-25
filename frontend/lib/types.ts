@@ -7,7 +7,7 @@ export interface Product {
   category: Category
   tags: string[]
   available: boolean
-  preparationTime: number // in minutes
+  preparationTime?: number // em minutos (o back ainda não tem esse campo)
   ingredients?: string[]
   nutritionalInfo?: {
     calories: number

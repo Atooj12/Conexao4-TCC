@@ -20,8 +20,8 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ClientLayout } from '@/components/client-layout'
-import { ProductCard } from '@/components/product-card'
-import { products } from '@/lib/mock-data'
+import { ProductCard, ProductCardSkeleton, CardapioErro } from '@/components/product-card'
+import { useProdutos } from '@/lib/use-produtos'
 import { categoryLabels, type Category } from '@/lib/types'
 
 const categoryIcons: Record<Category, React.ElementType> = {
@@ -33,7 +33,6 @@ const categoryIcons: Record<Category, React.ElementType> = {
   'especiais': Sparkles,
 }
 
-const featuredProducts = products.slice(0, 4)
 const categories = Object.entries(categoryLabels)
 
 const features = [
@@ -60,6 +59,13 @@ const features = [
 ]
 
 export default function HomePage() {
+  const { produtos, carregando, erro, recarregar } = useProdutos()
+  // Destaques: um produto disponível de cada categoria, até 4
+  const featuredProducts = produtos
+    .filter(p => p.available)
+    .filter((p, i, lista) => lista.findIndex(x => x.category === p.category) === i)
+    .slice(0, 4)
+
   return (
     <ClientLayout>
       {/* Hero Section */}
@@ -202,11 +208,17 @@ export default function HomePage() {
             </Button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product, index) => (
-              <ProductCard key={product.id} product={product} index={index} />
-            ))}
-          </div>
+          {erro ? (
+            <CardapioErro mensagem={erro} onTentarDeNovo={recarregar} />
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {carregando
+                ? Array.from({ length: 4 }).map((_, i) => <ProductCardSkeleton key={i} />)
+                : featuredProducts.map((product, index) => (
+                    <ProductCard key={product.id} product={product} index={index} />
+                  ))}
+            </div>
+          )}
 
           <div className="mt-8 text-center md:hidden">
             <Button variant="outline" asChild>

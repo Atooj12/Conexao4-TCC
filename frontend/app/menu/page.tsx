@@ -9,8 +9,9 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { ClientLayout } from '@/components/client-layout'
-import { ProductCard } from '@/components/product-card'
-import { products } from '@/lib/mock-data'
+import { ProductCard, ProductCardSkeleton, CardapioErro } from '@/components/product-card'
+import { useProdutos } from '@/lib/use-produtos'
+import type { Product } from '@/lib/types'
 import { categoryLabels, type Category } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
@@ -35,6 +36,7 @@ const categoryDescriptions: Record<Category, string> = {
 export default function MenuPage() {
   const searchParams = useSearchParams()
   const initialCategory = searchParams.get('categoria') as Category | null
+  const { produtos: products, carregando, erro, recarregar } = useProdutos()
 
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(initialCategory)
@@ -45,8 +47,7 @@ export default function MenuPage() {
         const query = searchQuery.toLowerCase()
         const matchesSearch = 
           product.name.toLowerCase().includes(query) ||
-          product.description.toLowerCase().includes(query) ||
-          product.tags.some(tag => tag.toLowerCase().includes(query))
+          product.description.toLowerCase().includes(query)
         if (!matchesSearch) return false
       }
 
@@ -56,14 +57,14 @@ export default function MenuPage() {
 
       return true
     })
-  }, [searchQuery, selectedCategory])
+  }, [products, searchQuery, selectedCategory])
 
   const productsByCategory = useMemo(() => {
     if (selectedCategory) {
       return { [selectedCategory]: filteredProducts }
     }
     
-    const grouped: Partial<Record<Category, typeof products>> = {}
+    const grouped: Partial<Record<Category, Product[]>> = {}
     filteredProducts.forEach(product => {
       if (!grouped[product.category]) {
         grouped[product.category] = []
@@ -245,7 +246,13 @@ export default function MenuPage() {
 
               {/* Products by Category */}
               <AnimatePresence mode="popLayout">
-                {Object.keys(productsByCategory).length > 0 ? (
+                {erro ? (
+                  <CardapioErro mensagem={erro} onTentarDeNovo={recarregar} />
+                ) : carregando ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
+                    {Array.from({ length: 6 }).map((_, i) => <ProductCardSkeleton key={i} />)}
+                  </div>
+                ) : Object.keys(productsByCategory).length > 0 ? (
                   <div className="space-y-12">
                     {Object.entries(productsByCategory).map(([category, categoryProducts]) => {
                       if (!categoryProducts || categoryProducts.length === 0) return null

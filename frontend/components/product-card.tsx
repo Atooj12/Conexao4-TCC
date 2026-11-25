@@ -3,13 +3,13 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { motion } from 'framer-motion'
-import { Plus, Clock, Coffee } from 'lucide-react'
+import { Plus, Clock, Coffee, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { useCart } from '@/lib/cart-context'
-import type { Product } from '@/lib/types'
-import { formatCurrency } from '@/lib/mock-data'
+import { categoryLabels, type Product } from '@/lib/types'
+import { formatCurrency } from '@/lib/format'
 import { cn } from '@/lib/utils'
 
 interface ProductCardProps {
@@ -107,10 +107,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             </div>
 
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50">
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{product.preparationTime} min</span>
-              </div>
+              {product.preparationTime ? (
+                <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{product.preparationTime} min</span>
+                </div>
+              ) : (
+                <span className="text-xs text-muted-foreground">{categoryLabels[product.category]}</span>
+              )}
               <span className="font-semibold text-primary">
                 {formatCurrency(product.price)}
               </span>
@@ -119,6 +123,23 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         </Card>
       </Link>
     </motion.div>
+  )
+}
+
+// Mensagem quando o cardápio não carrega (ex.: back desligado)
+export function CardapioErro({ mensagem, onTentarDeNovo }: { mensagem: string; onTentarDeNovo: () => void }) {
+  return (
+    <div className="text-center py-16">
+      <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
+        <Coffee className="h-8 w-8 text-muted-foreground" />
+      </div>
+      <p className="font-medium mb-1">Não foi possível carregar o cardápio</p>
+      <p className="text-sm text-muted-foreground mb-4">{mensagem}</p>
+      <Button variant="outline" className="gap-2" onClick={onTentarDeNovo}>
+        <RefreshCw className="h-4 w-4" />
+        Tentar de novo
+      </Button>
+    </div>
   )
 }
 
