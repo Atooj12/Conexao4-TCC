@@ -34,6 +34,7 @@ import { cn } from '@/lib/utils'
 const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   { icon: ClipboardList, label: 'Pedidos', href: '/admin/pedidos', mostraPendentes: true },
+  { icon: Coffee, label: 'Produtos', href: '/admin/produtos' },
   { icon: Package, label: 'Estoque', href: '/admin/estoque' },
   { icon: BarChart3, label: 'Relatórios', href: '/admin/relatorios' },
   { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },

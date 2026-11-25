@@ -66,3 +66,15 @@ export const proximoStatus: Partial<Record<OrderStatus, { status: OrderStatus; a
   preparing: { status: 'ready', acao: 'Marcar como pronto' },
   ready: { status: 'delivered', acao: 'Marcar como entregue' },
 }
+
+export interface Dashboard {
+  vendasHoje: number
+  pedidosHoje: number // de hoje, sem os cancelados
+  ticketMedio: number
+  pedidosPendentes: number
+  topProdutos: { produtoId: number; nome: string; quantidade: number; receita: number }[] // de sempre, top 5
+}
+
+export async function buscarDashboard(): Promise<Dashboard> {
+  return apiFetch<Dashboard>(`${BASE}/dashboard`)
+}

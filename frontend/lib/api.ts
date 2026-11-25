@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 // - transforma os erros do ABP ({ error: { message } }) em ApiError;
 // - se o token vencer (401), tenta renovar com o refresh_token; se não der, desloga.
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5000'
+export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://127.0.0.1:5000'
 
 // Client cadastrado no OpenIddict do back (o mesmo que o app usa)
 export const CLIENT_ID = 'Conexao4_App'

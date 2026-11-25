@@ -48,7 +48,9 @@ cd frontend && npm install && npm run dev
 O front roda em `http://localhost:3000`. Crie o arquivo `frontend/.env.local` com:
 
 ```
-NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://127.0.0.1:5000
 ```
+
+Use `127.0.0.1` e não `localhost`: no Windows, `localhost` tenta IPv6 primeiro e cada chamada à API demora mais.
 
 Depois de criar o arquivo, reinicie o `npm run dev`. Entre com `admin` ou `cliente@conexao4.com` (senha `1q2w3E*`).
