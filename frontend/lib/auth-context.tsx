@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { SESSAO_EXPIRADA, apiFetch, getToken, loginComSenha, saveTokens } from '@/lib/api'
 
 // Permissão que identifica o administrador (a mesma que o app usa)
@@ -153,4 +154,17 @@ export function useAuth() {
 // Nome para mostrar na tela: nome, senão usuário, senão e-mail
 export function nomeExibicao(user: AuthUser | null) {
   return user?.name || user?.userName || user?.email || ''
+}
+
+// Para páginas que só fazem sentido logado: manda para o login e depois volta para `voltar`.
+// `pronto` só fica true quando já se sabe que tem alguém logado.
+export function useExigirLogin(voltar: string) {
+  const { user, isLoading } = useAuth()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!isLoading && !user) router.replace(`/auth?voltar=${encodeURIComponent(voltar)}`)
+  }, [isLoading, user, router, voltar])
+
+  return { user, pronto: !isLoading && !!user }
 }

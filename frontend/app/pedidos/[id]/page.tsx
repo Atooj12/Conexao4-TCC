@@ -1,41 +1,50 @@
 'use client'
 
-import { use, useState, useEffect } from 'react'
+import { use, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { 
-  ArrowLeft, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Package, 
-  ChefHat,
-  Truck,
-  MapPin,
-  Phone,
-  CreditCard,
+import {
+  ArrowLeft,
   Coffee,
-  MessageCircle,
-  RefreshCw
+  CreditCard,
+  MessageSquare,
+  RefreshCw,
+  Store,
+  XCircle,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { toast } from 'sonner'
 import { ClientLayout } from '@/components/client-layout'
-import { formatCurrency, formatDateTime, formatTime } from '@/lib/mock-data'
-import { getOrderById } from '@/lib/orders-store'
-import { orderStatusLabels, paymentMethodLabels, type OrderStatus, type Order } from '@/lib/types'
+import { OrderProgress, StatusBadge, statusConfig } from '@/components/pedido-status'
+import { useExigirLogin } from '@/lib/auth-context'
+import { useCart } from '@/lib/cart-context'
+import { ApiError, showError } from '@/lib/api'
+import { pedidoEncerrado } from '@/lib/adapters'
+import { buscarPedido, cancelarPedido } from '@/lib/pedidos'
+import { useIntervalo } from '@/lib/use-intervalo'
+import { formatCurrency, formatDateTime } from '@/lib/format'
+import { paymentMethodLabels, type Order } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const statusConfig: Record<OrderStatus, { icon: typeof Clock; color: string; bgColor: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
-  confirmed: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  preparing: { icon: ChefHat, color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  ready: { icon: Package, color: 'text-green-600', bgColor: 'bg-green-100' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100' },
+const tipoPedidoTexto: Record<Order['orderType'], string> = {
+  'pickup': 'Retirar na loja',
+  'dine-in': 'Consumir no café',
+  'delivery': 'Entrega',
 }
 
 interface OrderDetailPageProps {
@@ -45,16 +54,49 @@ interface OrderDetailPageProps {
 export default function OrderDetailPage({ params }: OrderDetailPageProps) {
   const { id } = use(params)
   const router = useRouter()
+  const { pronto } = useExigirLogin(`/pedidos/${id}`)
+  const { repetirPedido, isBusy } = useCart()
 
-  const [order, setOrder] = useState<Order | undefined>(undefined)
-  const [loading, setLoading] = useState(true)
+  const [order, setOrder] = useState<Order | null>(null)
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
+  const [naoEncontrado, setNaoEncontrado] = useState(false)
+  const [cancelando, setCancelando] = useState(false)
 
-  useEffect(() => {
-    setOrder(getOrderById(id))
-    setLoading(false)
+  const carregar = useCallback(async (silencioso = false) => {
+    try {
+      setOrder(await buscarPedido(id))
+      setErro(null)
+    } catch (err) {
+      // 404: não existe; 403: é de outra pessoa. Nos dois casos, "não encontrado".
+      if (err instanceof ApiError && (err.status === 404 || err.status === 403)) setNaoEncontrado(true)
+      else if (!silencioso) setErro(err instanceof Error ? err.message : 'Não foi possível carregar o pedido.')
+    } finally {
+      setCarregando(false)
+    }
   }, [id])
 
-  if (loading) {
+  useEffect(() => {
+    if (pronto) carregar()
+  }, [pronto, carregar])
+
+  // Enquanto o pedido não termina, confere o status a cada 15 s (igual ao app)
+  useIntervalo(() => carregar(true), 15000, pronto && !!order && !pedidoEncerrado(order.status))
+
+  const cancelar = async () => {
+    setCancelando(true)
+    try {
+      setOrder(await cancelarPedido(id))
+      toast.success('Pedido cancelado')
+    } catch (err) {
+      showError(err) // ex.: o café já confirmou o pedido
+      carregar(true)
+    } finally {
+      setCancelando(false)
+    }
+  }
+
+  if (!pronto || carregando) {
     return (
       <ClientLayout>
         <div className="container px-4 py-32 text-center flex flex-col items-center justify-center">
@@ -65,13 +107,13 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     )
   }
 
-  if (!order) {
+  if (naoEncontrado || (!order && !erro)) {
     return (
       <ClientLayout>
         <div className="container px-4 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Pedido não encontrado</h1>
           <p className="text-muted-foreground mb-6">
-            O pedido que você está procurando não existe
+            Esse pedido não existe ou não é da sua conta
           </p>
           <Button asChild>
             <Link href="/pedidos">Ver meus pedidos</Link>
@@ -81,9 +123,23 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
     )
   }
 
+  if (!order) {
+    return (
+      <ClientLayout>
+        <div className="container px-4 py-16 text-center">
+          <p className="font-medium mb-1">Não foi possível carregar o pedido</p>
+          <p className="text-sm text-muted-foreground mb-4">{erro}</p>
+          <Button variant="outline" className="gap-2" onClick={() => { setCarregando(true); carregar() }}>
+            <RefreshCw className="h-4 w-4" />
+            Tentar de novo
+          </Button>
+        </div>
+      </ClientLayout>
+    )
+  }
+
   const config = statusConfig[order.status]
   const StatusIcon = config.icon
-  const isActive = ['pending', 'confirmed', 'preparing', 'ready'].includes(order.status)
 
   return (
     <ClientLayout>
@@ -92,11 +148,12 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
         <div className="bg-background border-b border-border">
           <div className="container px-4 py-4 md:px-6">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={() => router.back()}>
+              <Button variant="ghost" size="icon" onClick={() => router.push('/pedidos')}>
                 <ArrowLeft className="h-5 w-5" />
+                <span className="sr-only">Voltar para meus pedidos</span>
               </Button>
               <div>
-                <h1 className="font-serif text-xl font-bold">Pedido {order.id}</h1>
+                <h1 className="font-serif text-xl font-bold">Pedido #{order.id}</h1>
                 <p className="text-sm text-muted-foreground">
                   {formatDateTime(order.createdAt)}
                 </p>
@@ -107,51 +164,33 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
 
         <div className="container px-4 py-8 md:px-6">
           <div className="max-w-3xl mx-auto space-y-6">
-            {/* Status Card */}
+            {/* Status */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
             >
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-center gap-4 mb-6">
+                  <div className={cn('flex items-center gap-4', order.status !== 'cancelled' && 'mb-6')}>
                     <div className={cn('p-4 rounded-full', config.bgColor)}>
                       <StatusIcon className={cn('h-8 w-8', config.color)} />
                     </div>
                     <div>
-                      <Badge variant="outline" className={cn('mb-1', config.color)}>
-                        {orderStatusLabels[order.status]}
-                      </Badge>
-                      <p className="text-muted-foreground">
-                        {isActive
-                          ? 'Seu pedido está sendo preparado'
-                          : order.status === 'delivered'
-                          ? 'Pedido entregue com sucesso'
-                          : 'Pedido cancelado'
-                        }
-                      </p>
+                      <StatusBadge status={order.status} className="mb-1" />
+                      <p className="text-muted-foreground">{config.texto}</p>
                     </div>
                   </div>
 
-                  {/* Progress */}
-                  {isActive && (
-                    <>
-                      <OrderProgress status={order.status} />
-                      {order.estimatedDelivery && (
-                        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                          <Clock className="h-4 w-4" />
-                          <span>
-                            Previsão: {formatTime(order.estimatedDelivery)}
-                          </span>
-                        </div>
-                      )}
-                    </>
+                  {order.status !== 'cancelled' && (
+                    <div className="overflow-x-auto">
+                      <OrderProgress status={order.status} size="lg" />
+                    </div>
                   )}
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Order Items */}
+            {/* Itens */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -164,52 +203,38 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                 <CardContent>
                   <div className="space-y-4">
                     {order.items.map((item) => (
-                      <div key={item.product.id} className="flex items-center gap-4">
-                        <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                          <Coffee className="h-8 w-8 text-muted-foreground/50" />
+                      <div key={item.id ?? item.product.id} className="flex items-center gap-4">
+                        <div className="relative h-16 w-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center shrink-0">
+                          {item.product.image ? (
+                            <Image src={item.product.image} alt={item.product.name} fill className="object-cover" sizes="64px" />
+                          ) : (
+                            <Coffee className="h-8 w-8 text-muted-foreground/50" />
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-medium">{item.product.name}</h4>
                           <p className="text-sm text-muted-foreground">
-                            Qtd: {item.quantity} x {formatCurrency(item.product.price)}
+                            {item.quantity} x {formatCurrency(item.product.price)}
                           </p>
-                          {item.notes && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Obs: {item.notes}
-                            </p>
-                          )}
                         </div>
-                        <div className="text-right">
-                          <span className="font-medium">
-                            {formatCurrency(item.product.price * item.quantity)}
-                          </span>
-                        </div>
+                        <span className="font-medium shrink-0">
+                          {formatCurrency(item.subtotal ?? item.product.price * item.quantity)}
+                        </span>
                       </div>
                     ))}
                   </div>
 
                   <Separator className="my-4" />
 
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>{formatCurrency(order.subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Taxa de serviço</span>
-                      <span>{formatCurrency(order.tax)}</span>
-                    </div>
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-semibold">
-                      <span>Total</span>
-                      <span>{formatCurrency(order.total)}</span>
-                    </div>
+                  <div className="flex justify-between font-semibold">
+                    <span>Total</span>
+                    <span>{formatCurrency(order.total)}</span>
                   </div>
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Delivery Info */}
+            {/* Informações */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -217,36 +242,14 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
             >
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Informações da Entrega</CardTitle>
+                  <CardTitle className="text-lg">Informações</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                    <Store className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                     <div>
-                      <p className="font-medium">
-                        {order.orderType === 'pickup' 
-                          ? 'Retirada na loja' 
-                          : order.orderType === 'dine-in'
-                          ? 'Consumo no local'
-                          : 'Entrega'}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        {order.orderType === 'pickup'
-                          ? 'Retirada na cafeteria Conexão 4'
-                          : order.orderType === 'dine-in'
-                          ? `Mesa ${order.tableNumber || 'não especificada'}`
-                          : order.deliveryAddress
-                          ? `${order.deliveryAddress.street}, ${order.deliveryAddress.number}${order.deliveryAddress.complement ? ` - ${order.deliveryAddress.complement}` : ''} - ${order.deliveryAddress.neighborhood}, ${order.deliveryAddress.city}`
-                          : 'Rua das Flores, 123 - Jardim Paulista, São Paulo'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <Phone className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-medium">Contato</p>
-                      <p className="text-sm text-muted-foreground">{order.customerPhone}</p>
+                      <p className="font-medium">{tipoPedidoTexto[order.orderType]}</p>
+                      <p className="text-sm text-muted-foreground">Conexão 4 Café & Bistrô</p>
                     </div>
                   </div>
 
@@ -255,94 +258,67 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
                     <div>
                       <p className="font-medium">Pagamento</p>
                       <p className="text-sm text-muted-foreground">
-                        {paymentMethodLabels[order.paymentMethod]}
+                        {paymentMethodLabels[order.paymentMethod]} (no balcão)
                       </p>
                     </div>
                   </div>
+
+                  {order.notes && (
+                    <div className="flex items-start gap-3">
+                      <MessageSquare className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
+                      <div>
+                        <p className="font-medium">Observação</p>
+                        <p className="text-sm text-muted-foreground whitespace-pre-line">{order.notes}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
 
-            {/* Actions */}
+            {/* Ações */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
               className="flex flex-col sm:flex-row gap-4"
             >
-              <Button variant="outline" className="flex-1 gap-2">
-                <MessageCircle className="h-4 w-4" />
-                Falar com a loja
-              </Button>
-              {isActive ? (
-                <Button variant="destructive" className="flex-1">
-                  Cancelar pedido
-                </Button>
-              ) : (
-                <Button className="flex-1 gap-2">
+              {/* O back só deixa cancelar enquanto o pedido está Pendente */}
+              {order.status === 'pending' && (
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" className="flex-1 gap-2" disabled={cancelando}>
+                      <XCircle className="h-4 w-4" />
+                      {cancelando ? 'Cancelando...' : 'Cancelar pedido'}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancelar o pedido #{order.id}?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Dá para cancelar enquanto o café ainda não confirmou. Depois disso não tem volta.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Voltar</AlertDialogCancel>
+                      <AlertDialogAction onClick={cancelar}>Cancelar pedido</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              )}
+              {pedidoEncerrado(order.status) && (
+                <Button className="flex-1 gap-2" disabled={isBusy} onClick={() => repetirPedido(order.items)}>
                   <RefreshCw className="h-4 w-4" />
                   Pedir novamente
                 </Button>
               )}
+              <Button variant="outline" className="flex-1" asChild>
+                <Link href="/pedidos">Ver todos os pedidos</Link>
+              </Button>
             </motion.div>
           </div>
         </div>
       </div>
     </ClientLayout>
-  )
-}
-
-function OrderProgress({ status }: { status: OrderStatus }) {
-  const steps = [
-    { key: 'confirmed', label: 'Pedido confirmado', icon: CheckCircle2 },
-    { key: 'preparing', label: 'Em preparo', icon: ChefHat },
-    { key: 'ready', label: 'Saiu para entrega', icon: Truck },
-    { key: 'delivered', label: 'Entregue', icon: Package },
-  ]
-
-  const currentIndex = steps.findIndex(s => s.key === status)
-  const adjustedIndex = status === 'pending' ? -1 : currentIndex
-
-  return (
-    <div className="flex items-center justify-between">
-      {steps.map((step, index) => {
-        const isComplete = index <= adjustedIndex
-        const isCurrent = index === adjustedIndex
-        const StepIcon = step.icon
-
-        return (
-          <div key={step.key} className="flex items-center flex-1">
-            <div className="flex flex-col items-center">
-              <div
-                className={cn(
-                  'h-10 w-10 rounded-full flex items-center justify-center transition-colors',
-                  isComplete
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                )}
-              >
-                <StepIcon className="h-5 w-5" />
-              </div>
-              <span
-                className={cn(
-                  'text-xs mt-2 text-center',
-                  isCurrent ? 'font-medium' : 'text-muted-foreground'
-                )}
-              >
-                {step.label}
-              </span>
-            </div>
-            {index < steps.length - 1 && (
-              <div
-                className={cn(
-                  'flex-1 h-0.5 mx-2 mt-[-20px]',
-                  index < adjustedIndex ? 'bg-primary' : 'bg-muted'
-                )}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
   )
 }

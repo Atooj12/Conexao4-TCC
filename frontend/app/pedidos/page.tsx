@@ -1,50 +1,58 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
-  Package, 
-  ChefHat,
-  Coffee,
-  Truck,
-  ArrowRight
-} from 'lucide-react'
+import { Coffee, ArrowRight, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { ClientLayout } from '@/components/client-layout'
-import { formatCurrency, formatDateTime } from '@/lib/mock-data'
-import { getOrders } from '@/lib/orders-store'
-import { orderStatusLabels, type OrderStatus, type Order } from '@/lib/types'
+import { OrderProgress, StatusBadge, statusConfig } from '@/components/pedido-status'
+import { useExigirLogin } from '@/lib/auth-context'
+import { pedidoEncerrado } from '@/lib/adapters'
+import { buscarMeusPedidos } from '@/lib/pedidos'
+import { useIntervalo } from '@/lib/use-intervalo'
+import { formatCurrency, formatDateTime } from '@/lib/format'
+import type { Order } from '@/lib/types'
 import { cn } from '@/lib/utils'
 
-const statusConfig: Record<OrderStatus, { icon: typeof Clock; color: string; bgColor: string }> = {
-  pending: { icon: Clock, color: 'text-yellow-600', bgColor: 'bg-yellow-100' },
-  confirmed: { icon: CheckCircle2, color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  preparing: { icon: ChefHat, color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  ready: { icon: Package, color: 'text-green-600', bgColor: 'bg-green-100' },
-  delivered: { icon: CheckCircle2, color: 'text-green-600', bgColor: 'bg-green-100' },
-  cancelled: { icon: XCircle, color: 'text-red-600', bgColor: 'bg-red-100' },
-}
-
 export default function OrdersPage() {
+  const { pronto } = useExigirLogin('/pedidos')
   const [orders, setOrders] = useState<Order[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState<string | null>(null)
+  const [atualizando, setAtualizando] = useState(false)
 
-  useEffect(() => {
-    setOrders(getOrders())
+  // `silencioso`: atualização automática, sem mostrar o carregando
+  const carregar = useCallback(async (silencioso = false) => {
+    if (!silencioso) setCarregando(true)
+    try {
+      setOrders(await buscarMeusPedidos())
+      setErro(null)
+    } catch (err) {
+      if (!silencioso) setErro(err instanceof Error ? err.message : 'Não foi possível carregar seus pedidos.')
+    } finally {
+      setCarregando(false)
+    }
   }, [])
 
-  const activeOrders = orders.filter(o => 
-    ['pending', 'confirmed', 'preparing', 'ready'].includes(o.status)
-  )
-  const completedOrders = orders.filter(o => 
-    ['delivered', 'cancelled'].includes(o.status)
-  )
+  useEffect(() => {
+    if (pronto) carregar()
+  }, [pronto, carregar])
+
+  const activeOrders = orders.filter(o => !pedidoEncerrado(o.status))
+  const completedOrders = orders.filter(o => pedidoEncerrado(o.status))
+
+  // Enquanto houver pedido em andamento, confere o status a cada 20 s
+  useIntervalo(() => carregar(true), 20000, pronto && activeOrders.length > 0)
+
+  const atualizarAgora = async () => {
+    setAtualizando(true)
+    await carregar(true)
+    setAtualizando(false)
+  }
 
   return (
     <ClientLayout>
@@ -61,56 +69,79 @@ export default function OrdersPage() {
                 Meus Pedidos
               </h1>
               <p className="text-primary-foreground/80">
-                Acompanhe seus pedidos em tempo real
+                Acompanhe seus pedidos: o status atualiza sozinho
               </p>
             </motion.div>
           </div>
         </div>
 
         <div className="container px-4 py-8 md:px-6">
-          <Tabs defaultValue="active" className="space-y-6">
-            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
-              <TabsTrigger value="active" className="gap-2">
-                Em andamento
-                {activeOrders.length > 0 && (
-                  <Badge variant="secondary" className="ml-1">
-                    {activeOrders.length}
-                  </Badge>
+          {!pronto || carregando ? (
+            <div className="space-y-4 max-w-3xl mx-auto">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="h-32 rounded-xl bg-muted animate-pulse" />
+              ))}
+            </div>
+          ) : erro ? (
+            <div className="text-center py-16">
+              <p className="font-medium mb-1">Não foi possível carregar seus pedidos</p>
+              <p className="text-sm text-muted-foreground mb-4">{erro}</p>
+              <Button variant="outline" className="gap-2" onClick={() => carregar()}>
+                <RefreshCw className="h-4 w-4" />
+                Tentar de novo
+              </Button>
+            </div>
+          ) : (
+            <Tabs defaultValue={activeOrders.length > 0 || completedOrders.length === 0 ? 'active' : 'history'} className="space-y-6">
+              <div className="flex items-center justify-center gap-2">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="active" className="gap-2">
+                    Em andamento
+                    {activeOrders.length > 0 && (
+                      <Badge variant="secondary" className="ml-1">
+                        {activeOrders.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                  <TabsTrigger value="history">Histórico</TabsTrigger>
+                </TabsList>
+                <Button variant="ghost" size="icon" onClick={atualizarAgora} disabled={atualizando} title="Atualizar">
+                  <RefreshCw className={cn('h-4 w-4', atualizando && 'animate-spin')} />
+                  <span className="sr-only">Atualizar</span>
+                </Button>
+              </div>
+
+              <TabsContent value="active">
+                {activeOrders.length === 0 ? (
+                  <EmptyState
+                    title="Nenhum pedido em andamento"
+                    description="Faça um pedido e acompanhe aqui"
+                  />
+                ) : (
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {activeOrders.map((order, index) => (
+                      <OrderCard key={order.id} order={order} index={index} />
+                    ))}
+                  </div>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="history">Histórico</TabsTrigger>
-            </TabsList>
+              </TabsContent>
 
-            <TabsContent value="active">
-              {activeOrders.length === 0 ? (
-                <EmptyState
-                  title="Nenhum pedido em andamento"
-                  description="Faça um pedido e acompanhe aqui"
-                />
-              ) : (
-                <div className="space-y-4">
-                  {activeOrders.map((order, index) => (
-                    <OrderCard key={order.id} order={order} index={index} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="history">
-              {completedOrders.length === 0 ? (
-                <EmptyState
-                  title="Nenhum pedido no histórico"
-                  description="Seus pedidos anteriores aparecerão aqui"
-                />
-              ) : (
-                <div className="space-y-4">
-                  {completedOrders.map((order, index) => (
-                    <OrderCard key={order.id} order={order} index={index} />
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
+              <TabsContent value="history">
+                {completedOrders.length === 0 ? (
+                  <EmptyState
+                    title="Nenhum pedido no histórico"
+                    description="Pedidos entregues ou cancelados aparecem aqui"
+                  />
+                ) : (
+                  <div className="space-y-4 max-w-3xl mx-auto">
+                    {completedOrders.map((order, index) => (
+                      <OrderCard key={order.id} order={order} index={index} />
+                    ))}
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
+          )}
         </div>
       </div>
     </ClientLayout>
@@ -142,45 +173,38 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
+      transition={{ delay: Math.min(index, 5) * 0.08 }}
     >
       <Link href={`/pedidos/${order.id}`}>
         <Card className="hover:shadow-md transition-shadow cursor-pointer">
           <CardContent className="p-6">
             <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-4">
-                <div className={cn('p-3 rounded-full', config.bgColor)}>
+              <div className="flex items-start gap-4 min-w-0">
+                <div className={cn('p-3 rounded-full shrink-0', config.bgColor)}>
                   <StatusIcon className={cn('h-5 w-5', config.color)} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-sm font-medium">{order.id}</span>
-                    <Badge variant="outline" className={cn('text-xs', config.color)}>
-                      {orderStatusLabels[order.status]}
-                    </Badge>
+                    <span className="font-mono text-sm font-medium">#{order.id}</span>
+                    <StatusBadge status={order.status} className="text-xs" />
                   </div>
                   <p className="text-sm text-muted-foreground mb-2">
                     {formatDateTime(order.createdAt)}
                   </p>
-                  <div className="text-sm">
-                    {order.items.map((item, i) => (
-                      <span key={item.product.id}>
-                        {item.quantity}x {item.product.name}
-                        {i < order.items.length - 1 && ', '}
-                      </span>
-                    ))}
-                  </div>
+                  <p className="text-sm line-clamp-2">
+                    {order.items.map(item => `${item.quantity}x ${item.product.name}`).join(', ')}
+                  </p>
                 </div>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <p className="font-semibold">{formatCurrency(order.total)}</p>
                 <ArrowRight className="h-4 w-4 text-muted-foreground mt-2 ml-auto" />
               </div>
             </div>
 
-            {/* Progress for active orders */}
-            {['pending', 'confirmed', 'preparing', 'ready'].includes(order.status) && (
-              <div className="mt-4 pt-4 border-t border-border">
+            {/* Linha do tempo só para pedidos em andamento */}
+            {!pedidoEncerrado(order.status) && (
+              <div className="mt-4 pt-4 border-t border-border overflow-x-auto">
                 <OrderProgress status={order.status} />
               </div>
             )}
@@ -188,60 +212,5 @@ function OrderCard({ order, index }: { order: Order; index: number }) {
         </Card>
       </Link>
     </motion.div>
-  )
-}
-
-function OrderProgress({ status }: { status: OrderStatus }) {
-  const steps = [
-    { key: 'confirmed', label: 'Pedido confirmado', icon: CheckCircle2 },
-    { key: 'preparing', label: 'Em preparo', icon: ChefHat },
-    { key: 'ready', label: 'Saiu para entrega', icon: Truck },
-    { key: 'delivered', label: 'Entregue', icon: Package },
-  ]
-
-  const currentIndex = steps.findIndex(s => s.key === status)
-  const adjustedIndex = status === 'pending' ? -1 : currentIndex
-
-  return (
-    <div className="flex items-center justify-between">
-      {steps.map((step, index) => {
-        const isComplete = index <= adjustedIndex
-        const isCurrent = index === adjustedIndex
-        const StepIcon = step.icon
-
-        return (
-          <div key={step.key} className="flex items-center flex-1">
-            <div className="flex flex-col items-center">
-              <div
-                className={cn(
-                  'h-8 w-8 rounded-full flex items-center justify-center transition-colors',
-                  isComplete
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground'
-                )}
-              >
-                <StepIcon className="h-4 w-4" />
-              </div>
-              <span
-                className={cn(
-                  'text-xs mt-1',
-                  isCurrent ? 'font-medium' : 'text-muted-foreground'
-                )}
-              >
-                {step.label}
-              </span>
-            </div>
-            {index < steps.length - 1 && (
-              <div
-                className={cn(
-                  'flex-1 h-0.5 mx-2',
-                  index < adjustedIndex ? 'bg-primary' : 'bg-muted'
-                )}
-              />
-            )}
-          </div>
-        )
-      })}
-    </div>
   )
 }

@@ -38,16 +38,18 @@ export interface Order {
   id: string
   items: CartItem[]
   status: OrderStatus
-  total: number
-  subtotal: number
-  tax: number
+  total: number // calculado no back
   createdAt: Date
-  updatedAt: Date
-  estimatedDelivery?: Date
   customerName: string
-  customerPhone: string
   paymentMethod: PaymentMethod
   orderType: 'pickup' | 'delivery' | 'dine-in'
+  notes?: string // observação do pedido
+  // Campos que só existem nos dados de demonstração (o back não tem):
+  subtotal?: number
+  tax?: number
+  updatedAt?: Date
+  estimatedDelivery?: Date
+  customerPhone?: string
   deliveryAddress?: Address
   tableNumber?: number
 }

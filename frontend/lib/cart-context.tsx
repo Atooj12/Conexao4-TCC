@@ -33,6 +33,7 @@ interface CartContextType {
   isLoading: boolean // carregando o carrinho do back
   isBusy: boolean // alguma alteração em andamento (trava os botões)
   addItem: (product: Product, quantity?: number) => Promise<boolean>
+  repetirPedido: (itens: CartItem[]) => Promise<void>
   removeItem: (productId: string) => Promise<void>
   updateQuantity: (productId: string, quantity: number) => Promise<void>
   clearCart: () => Promise<void>
@@ -114,6 +115,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // "Pedir de novo": coloca no carrinho os itens de um pedido antigo.
+  // Item que ficou indisponível é pulado (o back recusa) e o usuário é avisado.
+  const repetirPedido = async (itens: CartItem[]) => {
+    if (!user || ocupado.current) return
+    const pulados: string[] = []
+    await alterar(async () => {
+      for (const item of itens) {
+        try {
+          await apiFetch(`${BASE}/adicionar-ao-carrinho/${item.product.id}?quantidade=${item.quantity}`, { method: 'POST' })
+        } catch {
+          pulados.push(item.product.name)
+        }
+      }
+    }).catch(() => {})
+    if (pulados.length === itens.length) {
+      toast.error('Nenhum item desse pedido está disponível agora.')
+      return
+    }
+    if (pulados.length > 0) toast.warning(`Indisponível no momento: ${pulados.join(', ')}`)
+    else toast.success('Itens adicionados ao carrinho')
+    setIsOpen(true)
+  }
+
   const removeItem = async (productId: string) => {
     const item = itemDoProduto(productId)
     if (!item?.id) return
@@ -161,6 +185,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         isLoading,
         isBusy,
         addItem,
+        repetirPedido,
         removeItem,
         updateQuantity,
         clearCart,

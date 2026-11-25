@@ -1,4 +1,4 @@
-import type { CartItem, Category, PaymentMethod, Product } from '@/lib/types'
+import type { CartItem, Category, Order, OrderStatus, PaymentMethod, Product } from '@/lib/types'
 
 // O back manda os dados no formato dele (nomes em português, enums como número).
 // Aqui eles viram os tipos que as telas do site já usam (lib/types.ts).
@@ -56,6 +56,14 @@ export function categoriaParaBack(categoria: Category): number {
   return CATEGORIAS.indexOf(categoria)
 }
 
+// 0 Pendente, 1 Confirmado, 2 EmPreparo, 3 Pronto, 4 Entregue, 5 Cancelado
+export const STATUS_PEDIDO: OrderStatus[] = ['pending', 'confirmed', 'preparing', 'ready', 'delivered', 'cancelled']
+
+// Entregue e Cancelado são finais: o pedido não muda mais
+export function pedidoEncerrado(status: OrderStatus) {
+  return status === 'delivered' || status === 'cancelled'
+}
+
 // 0 Pix, 1 Credito, 2 Debito, 3 Dinheiro
 export const FORMAS_PAGAMENTO: PaymentMethod[] = ['pix', 'credit', 'debit', 'cash']
 
@@ -89,5 +97,19 @@ export function toCartItem(dto: ItemPedidoDto): CartItem {
     product: { ...produto, price: dto.precoUnitario },
     quantity: dto.quantidade,
     subtotal: dto.subtotal,
+  }
+}
+
+export function toOrder(dto: PedidoDto): Order {
+  return {
+    id: String(dto.id),
+    items: dto.itens.map(toCartItem),
+    status: STATUS_PEDIDO[dto.status] ?? 'pending',
+    total: dto.total,
+    createdAt: new Date(dto.creationTime),
+    customerName: dto.nomeCliente ?? '',
+    paymentMethod: FORMAS_PAGAMENTO[dto.formaPagamento] ?? 'pix',
+    orderType: TIPOS_PEDIDO[dto.tipoPedido] ?? 'pickup',
+    notes: dto.observacao || undefined,
   }
 }
