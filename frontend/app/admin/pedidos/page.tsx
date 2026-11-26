@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
   Search,
@@ -89,6 +89,7 @@ function filtroDaUrl(valor: string | null): Filtro {
 
 function AdminOrdersPageConteudo() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<Filtro>(filtroDaUrl(searchParams.get('status')))
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -187,7 +188,8 @@ function AdminOrdersPageConteudo() {
       </div>
 
       {/* Abas de status */}
-      <Tabs value={statusFilter} onValueChange={(v) => setStatusFilter(v as Filtro)}>
+      {/* A aba vai para a URL: assim o sino (?status=pending) funciona mesmo estando em outra aba */}
+      <Tabs value={statusFilter} onValueChange={(v) => router.replace(v === 'all' ? '/admin/pedidos' : `/admin/pedidos?status=${v}`)}>
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 h-auto">
           {abas.map(aba => (
             <TabsTrigger key={aba.value} value={aba.value} className="gap-2">

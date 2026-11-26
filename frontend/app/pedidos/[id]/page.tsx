@@ -68,8 +68,8 @@ export default function OrderDetailPage({ params }: OrderDetailPageProps) {
       setOrder(await buscarPedido(id))
       setErro(null)
     } catch (err) {
-      // 404: não existe; 403: é de outra pessoa. Nos dois casos, "não encontrado".
-      if (err instanceof ApiError && (err.status === 404 || err.status === 403)) setNaoEncontrado(true)
+      // 404: não existe; 403: é de outra pessoa; 400: o id da URL nem é número. Em todos, "não encontrado".
+      if (err instanceof ApiError && [400, 403, 404].includes(err.status)) setNaoEncontrado(true)
       else if (!silencioso) setErro(err instanceof Error ? err.message : 'Não foi possível carregar o pedido.')
     } finally {
       setCarregando(false)

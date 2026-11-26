@@ -151,11 +151,11 @@ function AuthPageConteudo() {
               Conexao 4
             </h1>
             <p className="text-xl font-light tracking-[0.3em] uppercase mb-8 text-white/80">
-              Cafe & Bistro
+              Café & Bistrô
             </p>
             
             <p className="text-lg text-white/70 leading-relaxed mb-10">
-              Experimente o melhor cafe artesanal da cidade. 
+              Experimente o melhor café artesanal da cidade. 
               Cada xicara e preparada com carinho e dedicacao.
             </p>
 
@@ -163,7 +163,7 @@ function AuthPageConteudo() {
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-white/90">Cafe de especialidade</span>
+                <span className="text-white/90">Café de especialidade</span>
               </div>
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="h-2 w-2 rounded-full bg-accent" />
@@ -175,7 +175,7 @@ function AuthPageConteudo() {
               </div>
               <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3">
                 <div className="h-2 w-2 rounded-full bg-accent" />
-                <span className="text-white/90">Delivery rapido</span>
+                <span className="text-white/90">Peça pelo site e retire sem fila</span>
               </div>
             </div>
           </motion.div>
@@ -431,15 +431,9 @@ function AuthPageConteudo() {
             </Tabs>
           </Card>
 
+          {/* Termos de uso e privacidade ainda não foram escritos: só o aviso de onde ficam os dados */}
           <p className="mt-6 text-center text-xs text-muted-foreground">
-            Ao continuar, voce concorda com nossos{' '}
-            <Link href="/termos" className="text-primary hover:underline">
-              Termos de Uso
-            </Link>{' '}
-            e{' '}
-            <Link href="/privacidade" className="text-primary hover:underline">
-              Politica de Privacidade
-            </Link>
+            Seus dados são usados só para identificar seus pedidos.
           </p>
         </motion.div>
       </div>

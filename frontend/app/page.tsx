@@ -7,9 +7,8 @@ import {
   Clock,
   Star,
   Coffee,
-  Truck,
+  Smartphone,
   Award,
-  Users,
   CupSoda,
   Sandwich,
   CakeSlice,
@@ -42,9 +41,9 @@ const features = [
     description: 'Grãos selecionados das melhores fazendas brasileiras',
   },
   {
-    icon: Truck,
-    title: 'Entrega Rápida',
-    description: 'Receba seu pedido quentinho em até 30 minutos',
+    icon: Smartphone,
+    title: 'Peça pelo site ou app',
+    description: 'O mesmo cardápio e o mesmo carrinho no computador e no celular',
   },
   {
     icon: Award,
@@ -52,9 +51,9 @@ const features = [
     description: 'Ingredientes frescos e preparação artesanal',
   },
   {
-    icon: Users,
-    title: 'Programa Fidelidade',
-    description: 'Acumule pontos e ganhe recompensas exclusivas',
+    icon: Clock,
+    title: 'Acompanhe o preparo',
+    description: 'Veja quando o pedido foi confirmado, está em preparo ou ficou pronto',
   },
 ]
 

@@ -264,7 +264,7 @@ function AdminProdutosPageConteudo() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {carregando ? (
+                    {carregando && produtos.length === 0 ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
                           <TableCell colSpan={5}><div className="h-10 bg-muted rounded animate-pulse" /></TableCell>

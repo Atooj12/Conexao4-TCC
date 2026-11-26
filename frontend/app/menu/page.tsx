@@ -25,12 +25,12 @@ const categoryIcons: Record<Category, React.ElementType> = {
 }
 
 const categoryDescriptions: Record<Category, string> = {
-  'cafes': 'Cafes especiais preparados com graos selecionados',
-  'bebidas-geladas': 'Refrescantes opcoes para qualquer momento',
-  'lanches': 'Sanduiches e opcoes salgadas artesanais',
-  'doces': 'Sobremesas irresistiveis feitas na casa',
-  'salgados': 'Delicias salgadas para acompanhar seu cafe',
-  'especiais': 'Criacacoes exclusivas do nosso barista',
+  'cafes': 'Cafés especiais preparados com grãos selecionados',
+  'bebidas-geladas': 'Refrescantes opções para qualquer momento',
+  'lanches': 'Sanduíches e opções salgadas artesanais',
+  'doces': 'Sobremesas irresistíveis feitas na casa',
+  'salgados': 'Delícias salgadas para acompanhar seu café',
+  'especiais': 'Criações exclusivas do nosso barista',
 }
 
 function MenuPageConteudo() {
@@ -91,13 +91,13 @@ function MenuPageConteudo() {
             >
               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm mb-6">
                 <ChefHat className="h-4 w-4" />
-                <span className="text-sm font-medium">Feito com amor e cafe premium</span>
+                <span className="text-sm font-medium">Feito com amor e café premium</span>
               </div>
               <h1 className="font-serif text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-balance">
-                Nosso Cardapio
+                Nosso Cardápio
               </h1>
               <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto">
-                Explore nossa selecao de cafes especiais, bebidas artesanais e delicias gastronomicas preparadas com ingredientes frescos
+                Explore nossa seleção de cafés especiais, bebidas artesanais e delícias gastronômicas preparadas com ingredientes frescos
               </p>
             </motion.div>
           </div>
@@ -112,7 +112,7 @@ function MenuPageConteudo() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar no cardapio..."
+                    placeholder="Buscar no cardápio..."
                     className="pl-10 bg-card border-border/50"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -210,10 +210,10 @@ function MenuPageConteudo() {
                     <div className="w-10 h-10 rounded-full bg-accent/20 flex items-center justify-center">
                       <Coffee className="h-5 w-5 text-accent-foreground" />
                     </div>
-                    <h4 className="font-serif font-semibold">Cafe Fresco</h4>
+                    <h4 className="font-serif font-semibold">Café Fresco</h4>
                   </div>
                   <p className="text-sm text-muted-foreground leading-relaxed">
-                    Todos os nossos cafes sao preparados na hora com graos torrados semanalmente.
+                    Todos os nossos cafés são preparados na hora com grãos torrados semanalmente.
                   </p>
                 </div>
               </div>

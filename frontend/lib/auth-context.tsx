@@ -2,7 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { SESSAO_EXPIRADA, apiFetch, getToken, loginComSenha, saveTokens } from '@/lib/api'
+import { ApiError, SESSAO_EXPIRADA, apiFetch, getToken, loginComSenha, saveTokens } from '@/lib/api'
 
 // Permissão que identifica o administrador (a mesma que o app usa)
 const PERMISSAO_ADMIN = 'Conexao4.Pedidos.Gerenciar'
@@ -85,8 +85,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(atual)
       return atual
-    } catch {
-      saveTokens(null)
+    } catch (err) {
+      // Back fora do ar (status 0): mantém o token, para a sessão voltar no próximo F5
+      if (!(err instanceof ApiError && err.status === 0)) saveTokens(null)
       setUser(null)
       return null
     }
