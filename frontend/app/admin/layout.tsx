@@ -35,9 +35,9 @@ const sidebarItems = [
   { icon: LayoutDashboard, label: 'Dashboard', href: '/admin' },
   { icon: ClipboardList, label: 'Pedidos', href: '/admin/pedidos', mostraPendentes: true },
   { icon: Coffee, label: 'Produtos', href: '/admin/produtos' },
-  { icon: Package, label: 'Estoque', href: '/admin/estoque' },
-  { icon: BarChart3, label: 'Relatórios', href: '/admin/relatorios' },
-  { icon: Settings, label: 'Configurações', href: '/admin/configuracoes' },
+  { icon: Package, label: 'Estoque', href: '/admin/estoque', demo: true },
+  { icon: BarChart3, label: 'Relatórios', href: '/admin/relatorios', demo: true },
+  { icon: Settings, label: 'Configurações', href: '/admin/configuracoes', demo: true },
 ]
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
@@ -108,6 +108,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             >
               <item.icon className="h-5 w-5" />
               <span className="flex-1">{item.label}</span>
+              {item.demo && (
+                <span className="text-[10px] uppercase tracking-wide opacity-60" title="Tela de demonstração, ainda sem dados reais">
+                  Demo
+                </span>
+              )}
               {contador !== null && (
                 <Badge
                   variant="secondary"

@@ -44,14 +44,6 @@ export interface Order {
   paymentMethod: PaymentMethod
   orderType: 'pickup' | 'delivery' | 'dine-in'
   notes?: string // observação do pedido
-  // Campos que só existem nos dados de demonstração (o back não tem):
-  subtotal?: number
-  tax?: number
-  updatedAt?: Date
-  estimatedDelivery?: Date
-  customerPhone?: string
-  deliveryAddress?: Address
-  tableNumber?: number
 }
 
 export type OrderStatus = 
@@ -64,32 +56,7 @@ export type OrderStatus =
 
 export type PaymentMethod = 'pix' | 'credit' | 'debit' | 'cash'
 
-export interface User {
-  id: string
-  name: string
-  email: string
-  phone: string
-  avatar?: string
-  addresses: Address[]
-  favoriteProducts: string[]
-  orderHistory: string[]
-  loyaltyPoints: number
-  role: 'customer' | 'admin' | 'staff'
-}
-
-export interface Address {
-  id: string
-  label: string
-  street: string
-  number: string
-  complement?: string
-  neighborhood: string
-  city: string
-  state: string
-  zipCode: string
-  isDefault: boolean
-}
-
+// Só a tela de Estoque (demonstração) usa
 export interface InventoryItem {
   id: string
   name: string
@@ -99,16 +66,6 @@ export interface InventoryItem {
   lastRestocked: Date
   supplier?: string
   costPerUnit: number
-}
-
-export interface DashboardStats {
-  todaySales: number
-  todayOrders: number
-  avgOrderValue: number
-  pendingOrders: number
-  popularProducts: { product: Product; count: number }[]
-  revenueByHour: { hour: number; revenue: number }[]
-  ordersByStatus: { status: OrderStatus; count: number }[]
 }
 
 export const categoryLabels: Record<Category, string> = {

@@ -36,7 +36,7 @@ Todas as rotas, com exemplos de request e response, estão em [`API.md`](API.md)
 ## 3. Cadastro
 - **Campos:** e-mail, senha e confirmar senha.
 - **API:** `POST /api/account/register` com `{ userName: email, emailAddress: email, password, appName: "Conexao4" }`. Depois disso, já faz o login automático (mesma chamada da tela 2).
-- **Regra da senha:** mínimo de 6 caracteres, com maiúscula, minúscula, número e símbolo (ex.: `Senha123!`). Se não passar, mostrar a mensagem que vem do back.
+- **Regra da senha:** mínimo de 6 caracteres, sem outras exigências. Se não passar, mostrar a mensagem que vem do back.
 
 ## 4. Cardápio (aba inicial)
 - **Mostra:** lista ou grade de produtos com imagem, nome, preço e categoria.

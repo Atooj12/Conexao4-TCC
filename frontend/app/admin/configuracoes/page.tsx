@@ -29,14 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { AvisoDemonstracao, avisarDemonstracao } from '@/components/aviso-demonstracao'
 import { Separator } from '@/components/ui/separator'
 
 export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
 
+  // Ainda não há onde salvar no back: avisa em vez de fingir que salvou
   const handleSave = async () => {
     setIsSaving(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    avisarDemonstracao()
     setIsSaving(false)
   }
 
@@ -55,6 +57,8 @@ export default function SettingsPage() {
           {isSaving ? 'Salvando...' : 'Salvar Alterações'}
         </Button>
       </div>
+
+      <AvisoDemonstracao texto="As configurações ainda não são salvas no sistema. A tela mostra as opções que estão planejadas." />
 
       <Tabs defaultValue="geral" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-auto">

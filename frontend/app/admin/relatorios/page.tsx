@@ -22,7 +22,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { mockDashboardStats, formatCurrency } from '@/lib/mock-data'
+import { formatCurrency } from '@/lib/format'
+import { AvisoDemonstracao, avisarDemonstracao } from '@/components/aviso-demonstracao'
 import {
   AreaChart,
   Area,
@@ -39,7 +40,7 @@ import {
   Legend,
 } from 'recharts'
 
-// Mock data for reports
+// Números de exemplo (a tela ainda não tem back). Os números reais de hoje estão no Dashboard.
 const weeklyData = [
   { day: 'Seg', vendas: 2400, pedidos: 34 },
   { day: 'Ter', vendas: 1398, pedidos: 21 },
@@ -100,12 +101,14 @@ export default function ReportsPage() {
               <SelectItem value="year">Este Ano</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={avisarDemonstracao}>
             <Download className="h-4 w-4" />
             Exportar
           </Button>
         </div>
       </div>
+
+      <AvisoDemonstracao texto="Os gráficos abaixo usam números de exemplo, só para mostrar como os relatórios vão ficar. As vendas reais de hoje estão no Dashboard." />
 
       {/* Summary Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

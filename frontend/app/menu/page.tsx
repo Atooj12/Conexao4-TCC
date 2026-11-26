@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { Suspense, useState, useMemo } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, X, Coffee, CupSoda, Sandwich, CakeSlice, Sparkles, Croissant, ChefHat, Utensils } from 'lucide-react'
@@ -33,7 +33,7 @@ const categoryDescriptions: Record<Category, string> = {
   'especiais': 'Criacacoes exclusivas do nosso barista',
 }
 
-export default function MenuPage() {
+function MenuPageConteudo() {
   const searchParams = useSearchParams()
   const initialCategory = searchParams.get('categoria') as Category | null
   const { produtos: products, carregando, erro, recarregar } = useProdutos()
@@ -321,5 +321,14 @@ export default function MenuPage() {
         </div>
       </div>
     </ClientLayout>
+  )
+}
+
+// useSearchParams precisa de um Suspense em volta para o "next build" gerar a página
+export default function MenuPage() {
+  return (
+    <Suspense>
+      <MenuPageConteudo />
+    </Suspense>
   )
 }

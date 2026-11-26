@@ -54,7 +54,7 @@ namespace Conexao4
                 P("Sanduíche Caprese", "Pão ciabatta com mozzarella de búfala, tomate e manjericão fresco", 24.90m, CategoriaProduto.Lanches, unsplash + "1528735602780-2552fd46c7af?w=600&q=80"),
                 P("Brownie de Chocolate", "Brownie denso de chocolate 70% com nozes, servido morno", 14.90m, CategoriaProduto.Doces, unsplash + "1606313564200-e75d5e30476c?w=600&q=80"),
                 P("Tiramisù", "Clássico italiano com café espresso, mascarpone e cacau", 22.90m, CategoriaProduto.Doces, unsplash + "1571877227200-a0d98ea607e9?w=600&q=80"),
-                P("Quiche Lorraine", "Quiche clássica com bacon crocante, queijo gruyère e nata", 16.90m, CategoriaProduto.Salgados, unsplash + "1608039755401-742074f0548d?w=600&q=80"),
+                P("Quiche Lorraine", "Quiche clássica com bacon crocante, queijo gruyère e nata", 16.90m, CategoriaProduto.Salgados, "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Quiche_Lorraine-2009.jpg/500px-Quiche_Lorraine-2009.jpg"),
                 P("Coxinha", "Coxinha de frango com catupiry, massa crocante", 8.90m, CategoriaProduto.Salgados, "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Coxinha_-_iguaria_brasileira_01.jpg/250px-Coxinha_-_iguaria_brasileira_01.jpg"),
                 P("Chocolate Quente da Casa", "Chocolate cremoso com chantilly, receita especial da casa", 15.90m, CategoriaProduto.Especiais, "https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Hahndorf_Hot_Chocolate.jpg/250px-Hahndorf_Hot_Chocolate.jpg"),
             };

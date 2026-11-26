@@ -1,29 +1,13 @@
 'use client'
 
-import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Coffee, Mail, ArrowLeft, CheckCircle2, ArrowRight } from 'lucide-react'
+import { motion } from 'framer-motion'
+import { Mail, ArrowLeft, ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Card, CardContent } from '@/components/ui/card'
 
 export default function ForgotPasswordPage() {
-  const [email, setEmail] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    setIsLoading(false)
-    setIsSuccess(true)
-  }
-
   return (
     <div className="min-h-screen flex">
       {/* Left side - Coffee shop image */}
@@ -98,96 +82,38 @@ export default function ForgotPasswordPage() {
 
           <Card className="border-border/50 shadow-2xl shadow-primary/5 overflow-hidden">
             <CardContent className="p-8">
-              <AnimatePresence mode="wait">
-                {!isSuccess ? (
-                  <motion.div
-                    key="form"
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="flex justify-start mb-6">
-                      <Link
-                        href="/auth"
-                        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                        Voltar para o Login
-                      </Link>
-                    </div>
+              <div className="flex justify-start mb-6">
+                <Link
+                  href="/auth"
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  Voltar para o Login
+                </Link>
+              </div>
 
-                    <div className="mb-6">
-                      <h2 className="font-serif text-2xl font-semibold text-foreground">
-                        Esqueceu sua senha?
-                      </h2>
-                      <p className="text-sm text-muted-foreground mt-2">
-                        Digite seu e-mail cadastrado e enviaremos um link para redefinir sua senha.
-                      </p>
-                    </div>
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+                <Mail className="h-8 w-8 text-primary" />
+              </div>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="email" className="text-sm font-medium">
-                          E-mail
-                        </Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="email"
-                            type="email"
-                            placeholder="seu@email.com"
-                            className="pl-11 h-12 rounded-xl bg-muted/30 border-border/50 focus:bg-card transition-colors"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            required
-                          />
-                        </div>
-                      </div>
+              <h2 className="font-serif text-2xl font-semibold text-foreground mb-3">
+                Esqueceu sua senha?
+              </h2>
+              {/* O envio de e-mail ainda não está configurado no back; por enquanto quem troca a senha é a equipe */}
+              <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                A recuperação por e-mail ainda não está disponível. Fale com a equipe do café no balcão:
+                eles conseguem redefinir a sua senha pelo painel administrativo.
+              </p>
+              <p className="text-xs text-muted-foreground mb-8">
+                Em breve você vai poder fazer isso sozinho por aqui.
+              </p>
 
-                      <Button
-                        type="submit"
-                        className="w-full h-12 text-base font-medium rounded-xl shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all"
-                        disabled={isLoading}
-                      >
-                        {isLoading ? (
-                          <div className="h-5 w-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                        ) : (
-                          <>
-                            Enviar Link
-                            <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
-                      </Button>
-                    </form>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="success"
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-center py-4"
-                  >
-                    <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mx-auto mb-6">
-                      <CheckCircle2 className="h-10 w-10 text-green-600" />
-                    </div>
-
-                    <h2 className="font-serif text-2xl font-bold text-foreground mb-3">
-                      E-mail enviado!
-                    </h2>
-                    <p className="text-muted-foreground mb-8 text-sm leading-relaxed max-w-xs mx-auto">
-                      Enviamos um link de recuperação para <strong>{email}</strong>. Por favor, verifique sua caixa de entrada e pasta de spam.
-                    </p>
-
-                    <Button asChild className="w-full h-12 rounded-xl">
-                      <Link href="/auth">
-                        Ir para o Login
-                      </Link>
-                    </Button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              <Button asChild className="w-full h-12 rounded-xl">
+                <Link href="/auth">
+                  Ir para o Login
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
             </CardContent>
           </Card>
         </motion.div>

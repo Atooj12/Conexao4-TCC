@@ -36,7 +36,7 @@ POST /api/account/register
 { "userName": "joao", "emailAddress": "joao@email.com", "password": "Senha123!", "appName": "Conexao4" }
 ```
 
-A senha precisa ter maiúscula, minúscula, número e símbolo, com pelo menos 6 caracteres.
+A senha só precisa ter pelo menos 6 caracteres. O back desliga as exigências padrão do ABP (maiúscula, minúscula, número e símbolo) em `Conexao4.Domain/Identity/ChangeIdentityPasswordPolicySettingDefinitionProvider.cs`.
 
 ## 3. Quem está logado / é admin?
 

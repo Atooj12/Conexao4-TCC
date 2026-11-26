@@ -1,6 +1,6 @@
 'use client'
 import Image from "next/image"
-import { useState, useEffect } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -14,7 +14,7 @@ import { toast } from 'sonner'
 import { useAuth, nomeExibicao } from '@/lib/auth-context'
 import { showError } from '@/lib/api'
 
-export default function AuthPage() {
+function AuthPageConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { user, isLoading: carregandoSessao, login, register } = useAuth()
@@ -444,5 +444,14 @@ export default function AuthPage() {
         </motion.div>
       </div>
     </div>
+  )
+}
+
+// useSearchParams precisa de um Suspense em volta para o "next build" gerar a página
+export default function AuthPage() {
+  return (
+    <Suspense>
+      <AuthPageConteudo />
+    </Suspense>
   )
 }

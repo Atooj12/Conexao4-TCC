@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import {
@@ -87,7 +87,7 @@ function filtroDaUrl(valor: string | null): Filtro {
   return valor && (STATUS_PEDIDO as string[]).includes(valor) ? (valor as OrderStatus) : 'all'
 }
 
-export default function AdminOrdersPage() {
+function AdminOrdersPageConteudo() {
   const searchParams = useSearchParams()
   const [statusFilter, setStatusFilter] = useState<Filtro>(filtroDaUrl(searchParams.get('status')))
   const [searchQuery, setSearchQuery] = useState('')
@@ -456,5 +456,14 @@ export default function AdminOrdersPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+// useSearchParams precisa de um Suspense em volta para o "next build" gerar a página
+export default function AdminOrdersPage() {
+  return (
+    <Suspense>
+      <AdminOrdersPageConteudo />
+    </Suspense>
   )
 }

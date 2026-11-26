@@ -30,18 +30,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Progress } from '@/components/ui/progress'
-import { mockInventory, formatCurrency, formatDate } from '@/lib/mock-data'
+import { estoqueDemonstracao } from '@/lib/dados-demonstracao'
+import { formatCurrency, formatDate } from '@/lib/format'
+import { AvisoDemonstracao, avisarDemonstracao } from '@/components/aviso-demonstracao'
 import { cn } from '@/lib/utils'
 
 export default function InventoryPage() {
   const [searchQuery, setSearchQuery] = useState('')
 
-  const filteredItems = mockInventory.filter(item =>
+  const filteredItems = estoqueDemonstracao.filter(item =>
     item.name.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const lowStockItems = mockInventory.filter(item => item.quantity <= item.minStock)
-  const totalValue = mockInventory.reduce((acc, item) => acc + (item.quantity * item.costPerUnit), 0)
+  const lowStockItems = estoqueDemonstracao.filter(item => item.quantity <= item.minStock)
+  const totalValue = estoqueDemonstracao.reduce((acc, item) => acc + (item.quantity * item.costPerUnit), 0)
 
   return (
     <div className="space-y-6">
@@ -53,11 +55,13 @@ export default function InventoryPage() {
             Controle e monitore seu inventário
           </p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={avisarDemonstracao}>
           <Plus className="h-4 w-4" />
           Adicionar Item
         </Button>
       </div>
+
+      <AvisoDemonstracao texto="O controle de estoque ainda não existe no back. Os itens abaixo são de exemplo e os botões não salvam nada." />
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-3">
@@ -73,7 +77,7 @@ export default function InventoryPage() {
               <Package className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{mockInventory.length}</div>
+              <div className="text-2xl font-bold">{estoqueDemonstracao.length}</div>
               <p className="text-xs text-muted-foreground">produtos cadastrados</p>
             </CardContent>
           </Card>
@@ -137,7 +141,7 @@ export default function InventoryPage() {
                     {lowStockItems.map(item => item.name).join(', ')} estão abaixo do estoque mínimo.
                   </p>
                 </div>
-                <Button size="sm" variant="outline" className="shrink-0">
+                <Button size="sm" variant="outline" className="shrink-0" onClick={avisarDemonstracao}>
                   Repor Estoque
                 </Button>
               </div>
@@ -231,11 +235,11 @@ export default function InventoryPage() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={avisarDemonstracao}>
                                 <Edit2 className="mr-2 h-4 w-4" />
                                 Editar
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={avisarDemonstracao}>
                                 <Plus className="mr-2 h-4 w-4" />
                                 Adicionar Estoque
                               </DropdownMenuItem>

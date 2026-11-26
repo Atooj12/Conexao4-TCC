@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -76,7 +76,7 @@ const formularioVazio: Formulario = {
   name: '', description: '', price: '', image: '', category: 'cafes', available: true,
 }
 
-export default function AdminProdutosPage() {
+function AdminProdutosPageConteudo() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { produtos, carregando, erro, recarregar } = useProdutos()
@@ -484,5 +484,14 @@ export default function AdminProdutosPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+// useSearchParams precisa de um Suspense em volta para o "next build" gerar a página
+export default function AdminProdutosPage() {
+  return (
+    <Suspense>
+      <AdminProdutosPageConteudo />
+    </Suspense>
   )
 }
